@@ -1,0 +1,10 @@
+Package: TrackPlotR
+Title: Genomic Track Plot in R
+Version: 0.0.1
+Authors@R: 
+    person("Yiming", "Sun", , "yiming.sun12138@gmail.com", role = c("aut", "cre"))
+Description: Visualize genomic track plot in a concise, elegant and highly personalized way based on ggplot2.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.2
