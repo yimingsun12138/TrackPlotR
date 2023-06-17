@@ -113,8 +113,7 @@ coverage_vis_basic <- function(coverage_table,
   gg_object <- ggplot2::ggplot(data = coverage_table,mapping = ggplot2::aes(x = position,y = score,color = Sample,fill = Sample)) + 
     ggplot2::geom_area(stat = 'identity') + 
     ggplot2::facet_wrap(facets = ~ Sample,strip.position = 'right',ncol = 1) + 
-    ggplot2::scale_x_continuous(limits = c(start_site,end_site),expand = c(0,0)) + 
-    ggplot2::scale_y_continuous(limits = c(0,y_lim),expand = c(0,0)) + 
+    ggplot2::coord_cartesian(xlim = c(start_site,end_site),ylim = c(0,y_lim),expand = FALSE) + 
     ggplot2::ylab(base::paste0('Grouped Coverage\nRange : 0 - ',base::round(x = y_lim,digits = 3))) + 
     ggplot2::xlab(base::paste0(chr,' : ',start_site,' - ',end_site)) + 
     ggplot2::theme_bw() + 
@@ -245,7 +244,7 @@ range_vis_basic <- function(Ranges,
   gg_object <- gg_object + 
     ggplot2::ylab('Feature') + 
     ggplot2::xlab(base::paste0(chr,' : ',start_site,' - ',end_site)) + 
-    ggplot2::scale_x_continuous(limits = c(start_site,end_site),expand = c(0,0)) + 
+    ggplot2::coord_cartesian(xlim = c(start_site,end_site),expand = FALSE) + 
     ggplot2::theme_bw() + 
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
                    axis.ticks.y = ggplot2::element_blank(),
@@ -256,6 +255,182 @@ range_vis_basic <- function(Ranges,
     gg_object <- gg_object + 
       ggplot2::scale_color_manual(values = col_pal)
   }
+  
+  #return
+  return(gg_object)
+}
+
+#' Basic function for transcript visualization
+#' 
+#' @description
+#' Generate transcript track plot to visualize GTF-like genome annotation.
+#' 
+#' @export
+transcript_vis_basic <- function(anno,
+                                 region,
+                                 transcript_width = 0.3,
+                                 transcript_color = 'black',
+                                 exon_width = 3,
+                                 exon_color = '#333399',
+                                 CDS_width = 5,
+                                 CDS_color = '#333399',
+                                 arrow_break = 0.04,
+                                 arrow_length = 0.08,
+                                 arrow_color = 'darkgrey',
+                                 show_name = c('gene','none','transcript'),
+                                 name_size = 3){
+  
+  #check parameter
+  if(base::class(anno) != 'GRanges'){
+    base::stop('anno must be a GRanges object!')
+  }else{
+    anno <- rtracklayer::as.data.frame(anno)
+  }
+  
+  if(base::sum(!(c('type','gene_id','gene_name','transcript_id','cluster') %in% base::colnames(anno))) > 0){
+    base::stop('anno must contain 5 columns: type, gene_id, gene_name, transcript_id, cluster.')
+  }else{
+    anno$gene_id <- base::as.character(anno$gene_id)
+    anno$gene_name <- base::as.character(anno$gene_name)
+  }
+  
+  if(base::sum(base::is.na(anno$gene_id)) > 0){
+    base::stop('NA exist in gene_id!')
+  }else{
+    idx <- base::which(base::is.na(anno$gene_name))
+    anno[idx,"gene_name"] <- anno[idx,"gene_id"]
+  }
+  
+  if(base::class(region) != 'GRanges'){
+    base::stop('region must be a GRanges object!')
+  }else{
+    if(base::length(region) != 1){
+      base::stop('only 1 region required!')
+    }else{
+      chr <- base::as.character(region@seqnames)
+      start_site <- region@ranges@start
+      end_site <- region@ranges@start + region@ranges@width - 1
+    }
+  }
+  
+  if((arrow_break >= 1) | (arrow_break <= 0)){
+    base::stop('The value of arrow_break must be between 0 and 1!')
+  }
+  
+  #subset anno by overlap
+  idx <- base::which((anno$seqnames == chr) & (anno$end >= start_site) & (anno$start <= end_site))
+  
+  if(base::length(idx) == 0){
+    transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',gene_id = 'none',gene_name = 'none',transcript_id = 'none',cluster = 1)
+    transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
+    exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',gene_id = 'none',gene_name = 'none',transcript_id = 'none',cluster = 1)
+    CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',gene_id = 'none',gene_name = 'none',transcript_id = 'none',cluster = 1)
+  }else{
+    anno <- anno[idx,]
+    
+    #transcript table
+    idx <- base::which(anno$type == 'transcript')
+    if(base::length(idx) == 0){
+      transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',gene_id = 'none',gene_name = 'none',transcript_id = 'none',cluster = 1)
+    }else{
+      transcript_table <- anno[idx,]
+    }
+    transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
+    
+    #exon table
+    idx <- base::which(anno$type == 'exon')
+    if(base::length(idx) == 0){
+      exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',gene_id = 'none',gene_name = 'none',transcript_id = 'none',cluster = 1)
+    }else{
+      exon_table <- anno[idx,]
+    }
+    
+    #CDS table
+    idx <- base::which(anno$type == 'CDS')
+    if(base::length(idx) == 0){
+      CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',gene_id = 'none',gene_name = 'none',transcript_id = 'none',cluster = 1)
+    }else{
+      CDS_table <- anno[idx,]
+    }
+  }
+  
+  #create arrow table
+  arrow_table <- base::do.call(what = base::rbind,args = base::lapply(X = 1:(base::nrow(transcript_table)),FUN = function(x){
+    single_transcript <- transcript_table[x,,drop = FALSE]
+    break_length <- base::round(x = (region@ranges@width * arrow_break),digits = 0)
+    arrow_number <- base::floor((single_transcript$end - single_transcript$start)/break_length)
+    
+    if(arrow_number > 0){
+      breaked_transcript <- base::do.call(what = base::rbind,args = base::lapply(X = 1:arrow_number,FUN = function(y){
+        single_arrow <- single_transcript
+        
+        if(single_arrow$strand == '-'){
+          single_arrow$start <- single_arrow$end
+          single_arrow$end <- single_arrow$start - (break_length * y)
+        }else{
+          single_arrow$end <- single_arrow$start + (break_length * y)
+        }
+        
+        return(single_arrow)
+      }))
+      
+      return(breaked_transcript)
+    }else{
+      breaked_transcript <- single_transcript
+      
+      breaked_transcript$start <- 0
+      breaked_transcript$end <- 0
+      
+      return(breaked_transcript)
+    }
+  }))
+  
+  #plot arrow
+  gg_object <- ggplot2::ggplot() + 
+    ggplot2::geom_segment(data = arrow_table,mapping = ggplot2::aes(x = start,xend = end,y = cluster,yend = cluster),linewidth = transcript_width,color = arrow_color,arrow = grid::arrow(length = grid::unit(x = arrow_length,units = 'inches')))
+  
+  #plot transcript
+  gg_object <- gg_object + 
+    ggplot2::geom_segment(data = transcript_table,mapping = ggplot2::aes(x = start,xend = end,y = cluster,yend = cluster),linewidth = transcript_width,color = transcript_color)
+  
+  #plot exon
+  gg_object <- gg_object + 
+    ggplot2::geom_segment(data = exon_table,mapping = ggplot2::aes(x = start,xend = end,y = cluster,yend = cluster),linewidth = exon_width,color = exon_color)
+  
+  #plot CDS
+  gg_object <- gg_object + 
+    ggplot2::geom_segment(data = CDS_table,mapping = ggplot2::aes(x = start,xend = end,y = cluster,yend = cluster),linewidth = CDS_width,color = CDS_color)
+  
+  #plot name
+  show_name <- show_name[1]
+  if(show_name != 'none'){
+    if(show_name == 'gene'){
+      if(base::sum(base::is.na(transcript_table$gene_name)) > 0){
+        base::stop('NA exist in gene_name!')
+      }else{
+        gg_object <- gg_object + 
+          ggplot2::geom_text(data = transcript_table,mapping = ggplot2::aes(x = mid_point,y = cluster,label = gene_name),size = name_size,vjust = 1.5)
+      }
+    }
+    if(show_name == 'transcript'){
+      if(base::sum(base::is.na(transcript_table$transcript_id)) > 0){
+        base::stop('NA exist in transcript_id!')
+      }else{
+        gg_object <- gg_object + 
+          ggplot2::geom_text(data = transcript_table,mapping = ggplot2::aes(x = mid_point,y = cluster,label = transcript_id),size = name_size,vjust = 1.5)
+      }
+    }
+  }
+  
+  #modify ggplot object
+  gg_object <- gg_object + 
+    ggplot2::ylab('Transcript') + 
+    ggplot2::xlab(base::paste0(chr,' : ',start_site,' - ',end_site)) + 
+    ggplot2::coord_cartesian(xlim = c(start_site,end_site),expand = FALSE) + 
+    ggplot2::theme_bw() + 
+    ggplot2::theme(panel.grid = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank(),
+                   axis.text.y = ggplot2::element_blank())
   
   #return
   return(gg_object)
