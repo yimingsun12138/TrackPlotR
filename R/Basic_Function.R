@@ -138,7 +138,16 @@ coverage_vis_basic <- function(coverage_table,
 #' Basic function for genome range visualization
 #' 
 #' @description
-#' Generate range track plot to visualize cis-elements on genome, like peak region, human accelerated region (HAR) and so on.
+#' Generate range track plot to visualize cis-elements (features) on genome, like peak region, human accelerated region (HAR) and so on.
+#' 
+#' @param Ranges A GRanges or GRangesList object that stores the coordinates (ranges) of cis-elements (features) on the genome.
+#' @param region Genome region to generate the range track plot, must be a GRanges object.
+#' @param collapse_range Whether collapse the range track, default is FALSE.
+#' @param col_pal A custom palette used to override coloring for features.
+#' @param overlap_col Color for overlapped region of different features if collapse_range is set to TRUE.
+#' @param segment_size The thickness (linewidth) of the feature segment.
+#' 
+#' @return A ggplot object.
 #' 
 #' @export
 range_vis_basic <- function(Ranges,
@@ -179,7 +188,12 @@ range_vis_basic <- function(Ranges,
   
   #get overlapped range
   if((collapse_range) & (base::length(Ranges) > 1)){
-    overlapped_range <- base::Reduce(f = IRanges::intersect,x = Ranges)
+    idx <- utils::combn(x = base::names(Ranges),m = 2,FUN = NULL,simplify = FALSE)
+    overlapped_range <- base::do.call(what = base::c,args = base::lapply(X = idx,FUN = function(x){
+      Range_1 <- Ranges[[x[1]]]
+      Range_2 <- Ranges[[x[2]]]
+      return(IRanges::intersect(x = Range_1,y = Range_2))
+    }))
     if(base::length(overlapped_range) == 0){
       overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
     }else{
@@ -188,6 +202,7 @@ range_vis_basic <- function(Ranges,
         overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
       }
     }
+    overlapped_range <- IRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE)
     S4Vectors::mcols(overlapped_range) <- NULL
     overlapped_range <- rtracklayer::as.data.frame(overlapped_range)
     overlapped_range$track <- 'Feature'
@@ -237,7 +252,7 @@ range_vis_basic <- function(Ranges,
                    axis.text.y = ggplot2::element_blank())
   
   #color
-  if(!is.null(col_pal)){
+  if(!base::is.null(col_pal)){
     gg_object <- gg_object + 
       ggplot2::scale_color_manual(values = col_pal)
   }
