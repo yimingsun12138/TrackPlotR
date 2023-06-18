@@ -31,6 +31,7 @@ load_BigWig <- function(file_path,
     #load single file
     bw_file <- rtracklayer::import.bw(con = file_path[x])
     bw_file <- rtracklayer::as.data.frame(bw_file)
+    base::rownames(bw_file) <- NULL
     
     #assign sample name
     if(base::is.null(file_name)){
@@ -91,7 +92,10 @@ coverage_vis_basic <- function(coverage_table,
   
   #subset coverage table by overlap
   idx <- base::which((coverage_table$seqnames == chr) & (coverage_table$end >= start_site) & (coverage_table$start <= end_site))
-  coverage_table <- coverage_table[idx,]
+  if(base::length(idx) == 0){
+    base::stop('no coverage signal overlaps with provided region!')
+  }
+  coverage_table <- coverage_table[idx,,drop = FALSE]
   coverage_table <- tidyr::gather(data = coverage_table,key = 'side',value = 'position',start,end)
   base::gc()
   
@@ -114,8 +118,8 @@ coverage_vis_basic <- function(coverage_table,
     ggplot2::geom_area(stat = 'identity') + 
     ggplot2::facet_wrap(facets = ~ Sample,strip.position = 'right',ncol = 1) + 
     ggplot2::coord_cartesian(xlim = c(start_site,end_site),ylim = c(0,y_lim),expand = FALSE) + 
-    ggplot2::ylab(base::paste0('Grouped Coverage\nRange : 0 - ',base::round(x = y_lim,digits = 3))) + 
-    ggplot2::xlab(base::paste0(chr,' : ',start_site,' - ',end_site)) + 
+    ggplot2::ylab(base::paste0('Grouped Coverage\nRange : 0 - ',base::format(x = y_lim,scientific = TRUE,digits = 2))) + 
+    ggplot2::xlab(base::paste0(chr,' : ',base::format(x = start_site,scientific = FALSE),' - ',base::format(x = end_site,scientific = FALSE))) + 
     ggplot2::theme_bw() + 
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
                    panel.spacing = grid::unit(0,'lines'),
@@ -204,6 +208,7 @@ range_vis_basic <- function(Ranges,
     overlapped_range <- IRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE)
     S4Vectors::mcols(overlapped_range) <- NULL
     overlapped_range <- rtracklayer::as.data.frame(overlapped_range)
+    base::rownames(overlapped_range) <- NULL
     overlapped_range$track <- 'Feature'
   }
   
@@ -219,6 +224,7 @@ range_vis_basic <- function(Ranges,
     }
     
     temp_Range <- rtracklayer::as.data.frame(temp_Range)
+    base::rownames(temp_Range) <- NULL
     temp_Range$Feature <- x
     
     #return
@@ -243,7 +249,7 @@ range_vis_basic <- function(Ranges,
   
   gg_object <- gg_object + 
     ggplot2::ylab('Feature') + 
-    ggplot2::xlab(base::paste0(chr,' : ',start_site,' - ',end_site)) + 
+    ggplot2::xlab(base::paste0(chr,' : ',base::format(x = start_site,scientific = FALSE),' - ',base::format(x = end_site,scientific = FALSE))) + 
     ggplot2::scale_x_continuous(limits = c(start_site,end_site),expand = c(0,0)) + 
     ggplot2::theme_bw() + 
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
@@ -303,6 +309,7 @@ transcript_vis_basic <- function(anno,
     base::stop('anno must be a GRanges object!')
   }else{
     anno <- rtracklayer::as.data.frame(anno)
+    base::rownames(anno) <- NULL
   }
   
   if(base::sum(!(c('type','cluster') %in% base::colnames(anno))) > 0){
@@ -341,18 +348,22 @@ transcript_vis_basic <- function(anno,
   
   if(base::length(idx) == 0){
     transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '')
+    base::rownames(transcript_table) <- NULL
     transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
     exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '')
+    base::rownames(exon_table) <- NULL
     CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '')
+    base::rownames(CDS_table) <- NULL
   }else{
-    anno <- anno[idx,]
+    anno <- anno[idx,,drop = FALSE]
     
     #transcript table
     idx <- base::which(anno$type == 'transcript')
     if(base::length(idx) == 0){
       transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '')
+      base::rownames(transcript_table) <- NULL
     }else{
-      transcript_table <- anno[idx,]
+      transcript_table <- anno[idx,,drop = FALSE]
     }
     transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
     
@@ -360,16 +371,18 @@ transcript_vis_basic <- function(anno,
     idx <- base::which(anno$type == 'exon')
     if(base::length(idx) == 0){
       exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '')
+      base::rownames(exon_table) <- NULL
     }else{
-      exon_table <- anno[idx,]
+      exon_table <- anno[idx,,drop = FALSE]
     }
     
     #CDS table
     idx <- base::which(anno$type == 'CDS')
     if(base::length(idx) == 0){
       CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '')
+      base::rownames(CDS_table) <- NULL
     }else{
-      CDS_table <- anno[idx,]
+      CDS_table <- anno[idx,,drop = FALSE]
     }
   }
   
@@ -458,7 +471,7 @@ transcript_vis_basic <- function(anno,
   #modify ggplot object
   gg_object <- gg_object + 
     ggplot2::ylab('Transcript') + 
-    ggplot2::xlab(base::paste0(chr,' : ',start_site,' - ',end_site)) + 
+    ggplot2::xlab(base::paste0(chr,' : ',base::format(x = start_site,scientific = FALSE),' - ',base::format(x = end_site,scientific = FALSE))) + 
     ggplot2::scale_x_continuous(limits = c(start_site,end_site),expand = c(0,0)) + 
     ggplot2::theme_bw() + 
     ggplot2::theme(panel.grid = ggplot2::element_blank(),
