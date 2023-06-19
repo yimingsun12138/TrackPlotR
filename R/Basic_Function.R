@@ -30,7 +30,7 @@ load_BigWig <- function(file_path,
     
     #load single file
     bw_file <- rtracklayer::import.bw(con = file_path[x])
-    bw_file <- rtracklayer::as.data.frame(bw_file)
+    bw_file <- rtracklayer::as.data.frame(bw_file,row.names = NULL)
     base::rownames(bw_file) <- NULL
     
     #assign sample name
@@ -207,7 +207,7 @@ range_vis_basic <- function(Ranges,
     }
     overlapped_range <- IRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE)
     S4Vectors::mcols(overlapped_range) <- NULL
-    overlapped_range <- rtracklayer::as.data.frame(overlapped_range)
+    overlapped_range <- rtracklayer::as.data.frame(overlapped_range,row.names = NULL)
     base::rownames(overlapped_range) <- NULL
     overlapped_range$track <- 'Feature'
   }
@@ -223,7 +223,7 @@ range_vis_basic <- function(Ranges,
       temp_Range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
     }
     
-    temp_Range <- rtracklayer::as.data.frame(temp_Range)
+    temp_Range <- rtracklayer::as.data.frame(temp_Range,row.names = NULL)
     base::rownames(temp_Range) <- NULL
     temp_Range$Feature <- x
     
@@ -308,7 +308,7 @@ transcript_vis_basic <- function(anno,
   if(base::class(anno) != 'GRanges'){
     base::stop('anno must be a GRanges object!')
   }else{
-    anno <- rtracklayer::as.data.frame(anno)
+    anno <- rtracklayer::as.data.frame(anno,row.names = NULL)
     base::rownames(anno) <- NULL
   }
   
@@ -347,12 +347,12 @@ transcript_vis_basic <- function(anno,
   idx <- base::which((anno$seqnames == chr) & (anno$end >= start_site) & (anno$start <= end_site))
   
   if(base::length(idx) == 0){
-    transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '')
+    transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '',row.names = NULL)
     base::rownames(transcript_table) <- NULL
     transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
-    exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '')
+    exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '',row.names = NULL)
     base::rownames(exon_table) <- NULL
-    CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '')
+    CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '',row.names = NULL)
     base::rownames(CDS_table) <- NULL
   }else{
     anno <- anno[idx,,drop = FALSE]
@@ -360,7 +360,7 @@ transcript_vis_basic <- function(anno,
     #transcript table
     idx <- base::which(anno$type == 'transcript')
     if(base::length(idx) == 0){
-      transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '')
+      transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '',row.names = NULL)
       base::rownames(transcript_table) <- NULL
     }else{
       transcript_table <- anno[idx,,drop = FALSE]
@@ -370,7 +370,7 @@ transcript_vis_basic <- function(anno,
     #exon table
     idx <- base::which(anno$type == 'exon')
     if(base::length(idx) == 0){
-      exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '')
+      exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '',row.names = NULL)
       base::rownames(exon_table) <- NULL
     }else{
       exon_table <- anno[idx,,drop = FALSE]
@@ -379,7 +379,7 @@ transcript_vis_basic <- function(anno,
     #CDS table
     idx <- base::which(anno$type == 'CDS')
     if(base::length(idx) == 0){
-      CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '')
+      CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '',row.names = NULL)
       base::rownames(CDS_table) <- NULL
     }else{
       CDS_table <- anno[idx,,drop = FALSE]
