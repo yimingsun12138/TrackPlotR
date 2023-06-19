@@ -101,6 +101,9 @@ coverage_vis_basic <- function(coverage_table,
   #order sample
   if(!base::is.null(sample_order)){
     coverage_table$Sample <- base::factor(x = coverage_table$Sample,levels = sample_order)
+  }else{
+    sample_order <- base::sort(x = base::unique(coverage_table$Sample),decreasing = FALSE)
+    coverage_table$Sample <- base::factor(x = coverage_table$Sample,levels = sample_order)
   }
   
   #set y limit
