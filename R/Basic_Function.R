@@ -64,8 +64,6 @@ load_BigWig <- function(file_path,
 #' @param col_pal A custom palette used to override coloring for samples.
 #' 
 #' @return A ggplot object.
-#' 
-#' @export
 coverage_vis_basic <- function(coverage_table,
                                region,
                                y_lim = NULL,
@@ -157,8 +155,6 @@ coverage_vis_basic <- function(coverage_table,
 #' @param segment_size The thickness (linewidth) of the feature segment.
 #' 
 #' @return A ggplot object.
-#' 
-#' @export
 range_vis_basic <- function(Ranges,
                             region,
                             collapse_range = FALSE,
@@ -295,8 +291,6 @@ range_vis_basic <- function(Ranges,
 #' @param name_size Text size used to draw the transcript name.
 #' 
 #' @return A ggplot object.
-#' 
-#' @export
 transcript_vis_basic <- function(anno,
                                  region,
                                  transcript_width = 0.3,
