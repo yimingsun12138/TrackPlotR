@@ -16,6 +16,7 @@ Imports:
     grid,
     ggplot2,
     IRanges,
+    GenomicRanges,
     rtracklayer,
     tidyr,
     tidyverse

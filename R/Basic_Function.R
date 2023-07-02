@@ -142,25 +142,25 @@ coverage_vis_basic <- function(coverage_table,
   return(gg_object)
 }
 
-#' Basic function for genome range visualization
+#' Basic function for genome feature visualization
 #' 
 #' @description
-#' Generate range track plot to visualize cis-elements (features) on genome, like peak region, human accelerated region (HAR) and so on.
+#' Generate feature track plot to visualize cis-elements on genome, like peak region, human accelerated region (HAR) and so on.
 #' 
-#' @param Ranges A GRanges or GRangesList object that stores the coordinates (ranges) of cis-elements (features) on the genome.
-#' @param region Genome region used to generate the range track plot, must be a GRanges object.
-#' @param collapse_range Whether collapse the range track, default is FALSE.
+#' @param Ranges A GRanges or GRangesList object that stores the coordinates of cis-elements (features) on the genome.
+#' @param region Genome region used to generate the feature track plot, must be a GRanges object.
+#' @param collapse_range Whether collapse the feature track, default is FALSE.
 #' @param col_pal A custom palette used to override coloring for features.
 #' @param overlap_col Color for overlapped region of different features if collapse_range is set to TRUE.
 #' @param segment_size The thickness (linewidth) of the feature segment.
 #' 
 #' @return A ggplot object.
-range_vis_basic <- function(Ranges,
-                            region,
-                            collapse_range = FALSE,
-                            col_pal = NULL,
-                            overlap_col = 'darkgrey',
-                            segment_size = 2){
+feature_vis_basic <- function(Ranges,
+                              region,
+                              collapse_range = FALSE,
+                              col_pal = NULL,
+                              overlap_col = 'darkgrey',
+                              segment_size = 2){
   
   #check parameter
   if(base::class(region) != 'GRanges'){
