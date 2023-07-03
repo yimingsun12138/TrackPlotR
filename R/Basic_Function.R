@@ -475,3 +475,89 @@ transcript_vis_basic <- function(anno,
   #return
   return(gg_object)
 }
+
+#' Basic function for grouping transcripts into clusters
+#' 
+#' @description
+#' Group transcripts into clusters for better visualization.
+#' 
+#' @param gene_anno A GRanges object which stores the gene annotation information.
+#' @param column_name Which column in gene_anno stores the unique id for each transcript/gene?
+#' 
+#' @return Attaching cluster ids to gene_anno.
+group_transcripts <- function(gene_anno,
+                              column_name){
+  
+  #check parameter
+  if(base::class(gene_anno) != 'GRanges'){
+    base::stop('gene_anno must be a GRanges object!')
+  }
+  
+  if(base::length(gene_anno) == 0){
+    base::stop('no data in gene_anno!')
+  }
+  
+  if(!base::all(c('type',column_name) %in% base::colnames(gene_anno@elementMetadata))){
+    base::stop(base::paste0('gene_anno must contain two columns: type and ',column_name,'!'))
+  }
+  
+  if(!base::all(!base::is.na(gene_anno@elementMetadata[,column_name]))){
+    base::stop(base::paste0('NA is not allowed in gene_anno column: ',column_name,'!'))
+  }
+  
+  #get transcript region
+  transcript_list <- base::unique(base::as.character(gene_anno@elementMetadata[,column_name]))
+  transcript_list <- base::do.call(what = base::c,args = base::lapply(X = transcript_list,FUN = function(x){
+    idx <- base::which(gene_anno@elementMetadata[,column_name] == x)
+    temp_anno <- gene_anno[idx]
+    
+    chr <- base::unique(base::as.character(temp_anno@seqnames))
+    if(base::length(chr) != 1){
+      base::stop('check the seqname for each transcript/gene!')
+    }
+    start_site <- base::min(IRanges::start(temp_anno))
+    end_site <- base::max(IRanges::end(temp_anno))
+    
+    temp_anno <- methods::as(base::paste0(chr,':',start_site,'-',end_site),'GRanges')
+    temp_anno$unique_name <- x
+    
+    return(temp_anno)
+  }))
+  
+  #group transcript
+  idx <- base::order(IRanges::start(transcript_list),decreasing = FALSE)
+  transcript_list <- transcript_list[idx]
+  
+  ordered_transcript_list <- transcript_list[1]
+  ordered_transcript_list$cluster <- 1
+  transcript_list <- transcript_list[-1]
+  
+  cluster_list <- c(1)
+  cluster_end <- c(IRanges::end(ordered_transcript_list))
+  
+  while(base::length(transcript_list) > 0){
+    temp_transcript <- transcript_list[1]
+    transcript_list <- transcript_list[-1]
+    
+    idx <- base::which(IRanges::start(temp_transcript) > cluster_end)
+    if(base::length(idx) == 0){
+      temp_transcript$cluster <- base::max(cluster_list) + 1
+      cluster_list <- c(cluster_list,temp_transcript$cluster)
+      cluster_end <- c(cluster_end,IRanges::end(temp_transcript))
+    }else{
+      idx <- base::min(idx)
+      temp_transcript$cluster <- cluster_list[idx]
+      cluster_end[idx] <- IRanges::end(temp_transcript)
+    }
+    
+    ordered_transcript_list <- c(ordered_transcript_list,temp_transcript)
+  }
+  
+  #group gene_anno
+  cluster_list <- ordered_transcript_list$cluster
+  base::names(cluster_list) <- ordered_transcript_list$unique_name
+  gene_anno$cluster <- cluster_list[base::as.character(gene_anno@elementMetadata[,column_name])]
+  
+  #return
+  return(gene_anno)
+}

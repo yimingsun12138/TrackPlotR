@@ -288,3 +288,139 @@ feature_vis_gene <- function(features,
   #return
   return(feature_plot)
 }
+
+#' Transcript track visualization in the specified genome region
+#' 
+#' @description
+#' Generate transcript track plot in the specified genome region. 
+#' This function is the user interface for the basic function `transcript_vis_basic`, and is specifically optimized for Ensembl GTF file.
+transcript_vis_region <- function(gene_anno,
+                                  region,
+                                  up_extend = 0,
+                                  down_extend = 0,
+                                  style = c('style_1'),
+                                  arrow_break = 0.04,
+                                  display_by = c('gene','transcript'),
+                                  display_mode = c('squish','full','collapse'),
+                                  show_name = c('none','gene_name','gene_id','transcript_name','transcript_id'),
+                                  ...){
+  
+  #check parameter
+  if(base::class(gene_anno) != 'GRanges'){
+    gene_anno <- rtracklayer::import(con = gene_anno,format = 'gtf')
+  }
+  
+  if(!('type' %in% base::colnames(gene_anno@elementMetadata))){
+    base::stop('gene_anno must contain the column: type!')
+  }
+  
+  if(sum(gene_anno$type == 'transcript') == 0){
+    base::stop('no transcript found in gene_anno!')
+  }
+  if(sum(gene_anno$type == 'gene') == 0){
+    base::stop('no gene found in the gene_anno!')
+  }
+  idx <- base::which(gene_anno$type %in% c('gene','transcript','exon','CDS'))
+  gene_anno <- gene_anno[idx]
+  
+  style <- style[1]
+  if(!(style %in% c('style_1'))){
+    base::stop('invalid style!')
+  }
+  
+  display_by <- display_by[1]
+  if(!(display_by %in% c('gene','transcript'))){
+    base::stop('invalid display_by!')
+  }
+  
+  display_mode <- display_mode[1]
+  if(!(display_mode %in% c('squish','full','collapse'))){
+    base::stop('invalid display_mode!')
+  }
+  
+  show_name <- show_name[1]
+  if(!(show_name %in% c('none','gene_name','gene_id','transcript_name','transcript_id'))){
+    base::stop('invalid show_name!')
+  }
+  
+  if(base::class(region) != 'GRanges'){
+    base::stop('region must be a GRanges object!')
+  }else{
+    if(base::length(region) != 1){
+      base::stop('only 1 region required!')
+    }
+  }
+  
+  #extend region
+  IRanges::start(region) <- IRanges::start(region) - up_extend
+  IRanges::end(region) <- IRanges::end(region) + down_extend
+  
+  #modify gene_anno
+  if(display_by == 'gene'){
+    #check data
+    if(!('gene_id' %in% base::colnames(gene_anno@elementMetadata))){
+      base::stop('gene_anno must contain the column: gene_id!')
+    }
+    if(!base::all(!base::is.na(gene_anno$gene_id))){
+      base::stop('NA is not allowed in gene_anno column: gene_id!')
+    }
+    
+    #modify
+    gene_anno$unique_id <- base::as.character(gene_anno$gene_id)
+    
+    idx <- base::which(gene_anno$type != 'transcript')
+    gene_anno <- gene_anno[idx]
+    idx <- base::which(gene_anno$type == 'gene')
+    gene_anno@elementMetadata[idx,"type"] <- 'transcript'
+  }else if(display_by == 'transcript'){
+    #remove gene
+    idx <- base::which(gene_anno$type != 'gene')
+    gene_anno <- gene_anno[idx]
+    
+    #check data
+    if(!('transcript_id' %in% base::colnames(gene_anno@elementMetadata))){
+      base::stop('gene_anno must contain the column: transcript_id!')
+    }
+    if(!base::all(!base::is.na(gene_anno$transcript_id))){
+      base::stop('NA is not allowed in gene_anno column: transcript_id!')
+    }
+    
+    #modify
+    gene_anno$unique_id <- base::as.character(gene_anno$transcript_id)
+  }else{
+    base::stop('I can not believe this happened, LOL')
+  }
+  
+  #add unique name
+  if(show_name != 'none'){
+    if(!(show_name %in% base::colnames(gene_anno@elementMetadata))){
+      base::stop(base::paste0('gene_anno must contain the column: ',show_name,'!'))
+    }
+    gene_anno$unique_name <- base::as.character(gene_anno@elementMetadata[,show_name])
+  }else{
+    gene_anno$unique_name <- NA
+  }
+  
+  #group gene_anno
+  gene_anno$cluster <- 1
+  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region)
+  if(base::length(gene_anno) > 0){
+    gene_anno <- group_transcripts(gene_anno = gene_anno,column_name = 'unique_id')
+  }
+  gene_anno$cluster <- base::max(gene_anno$cluster) - gene_anno$cluster + 1
+  
+  #plot
+  transcript_plot <- transcript_vis_basic(anno = gene_anno,
+                                          region = region,
+                                          arrow_break = arrow_break,
+                                          show_name = 'unique_name',
+                                          ...)
+  
+  #style
+  if(style == 'style_1'){
+    transcript_plot <- transcript_plot
+  }
+  
+  #return
+  return(transcript_plot)
+}
