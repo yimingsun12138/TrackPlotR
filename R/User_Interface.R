@@ -402,12 +402,20 @@ transcript_vis_region <- function(gene_anno,
   }
   
   #group gene_anno
-  gene_anno$cluster <- 1
-  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region)
-  if(base::length(gene_anno) > 0){
-    gene_anno <- group_transcripts(gene_anno = gene_anno,column_name = 'unique_id')
+  if(display_mode == 'squish'){
+    gene_anno$cluster <- 1
+    gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region)
+    if(base::length(gene_anno) > 0){
+      gene_anno <- group_transcripts(gene_anno = gene_anno,column_name = 'unique_id')
+    }
+    gene_anno$cluster <- base::max(gene_anno$cluster) - gene_anno$cluster + 1
+  }else if(display_mode == 'full'){
+    gene_anno$cluster <- gene_anno$unique_id
+  }else if(display_mode == 'collapse'){
+    gene_anno$cluster <- 1
+  }else{
+    base::stop('I can not believe this happened, LOL')
   }
-  gene_anno$cluster <- base::max(gene_anno$cluster) - gene_anno$cluster + 1
   
   #plot
   transcript_plot <- transcript_vis_basic(anno = gene_anno,
