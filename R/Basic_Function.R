@@ -515,10 +515,10 @@ group_transcripts <- function(gene_anno,
     if(base::length(chr) != 1){
       base::stop('check the seqname for each transcript/gene!')
     }
-    start_site <- base::min(IRanges::start(temp_anno))
-    end_site <- base::max(IRanges::end(temp_anno))
+    start_site <- base::as.character(base::min(IRanges::start(temp_anno)))
+    end_site <- base::as.character(base::max(IRanges::end(temp_anno)))
     
-    temp_anno <- methods::as(base::paste0(chr,':',start_site,'-',end_site),'GRanges')
+    temp_anno <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
     temp_anno$unique_name <- x
     
     return(temp_anno)

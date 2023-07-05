@@ -293,7 +293,23 @@ feature_vis_gene <- function(features,
 #' 
 #' @description
 #' Generate transcript track plot in the specified genome region. 
-#' This function is the user interface for the basic function `transcript_vis_basic`, and is specifically optimized for Ensembl GTF file.
+#' This function is the user interface for the basic function `transcript_vis_basic`, 
+#' and is specifically optimized for Ensembl GTF file.
+#' 
+#' @param gene_anno Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information. Ensembl GTF file is recommended.
+#' @param region Genome region used to generate the feature track plot, must be a GRanges object.
+#' @param up_extend How many base pairs to extend upstream the region?
+#' @param down_extend How many base pairs to extend upstream the region?
+#' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
+#' @param arrow_break The gap between neighbor arrows equals to region width times arrow_break.
+#' @param display_by Display by transcripts or display by genes?
+#' @param display_mode Display mode provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
+#' @param show_name Which column in gene_anno stores the transcript/gene names to be plotted? Set to NULL and no name will be shown.
+#' @param ... Try `?TrackPlotR::transcript_vis_basic` for more parameters.
+#' 
+#' @return A ggplot object.
+#' 
+#' @export
 transcript_vis_region <- function(gene_anno,
                                   region,
                                   up_extend = 0,
@@ -302,7 +318,7 @@ transcript_vis_region <- function(gene_anno,
                                   arrow_break = 0.04,
                                   display_by = c('gene','transcript'),
                                   display_mode = c('squish','full','collapse'),
-                                  show_name = c('none','gene_name','gene_id','transcript_name','transcript_id'),
+                                  show_name = NULL,
                                   ...){
   
   #check parameter
@@ -317,10 +333,7 @@ transcript_vis_region <- function(gene_anno,
   if(sum(gene_anno$type == 'transcript') == 0){
     base::stop('no transcript found in gene_anno!')
   }
-  if(sum(gene_anno$type == 'gene') == 0){
-    base::stop('no gene found in the gene_anno!')
-  }
-  idx <- base::which(gene_anno$type %in% c('gene','transcript','exon','CDS'))
+  idx <- base::which(gene_anno$type %in% c('transcript','exon','CDS'))
   gene_anno <- gene_anno[idx]
   
   style <- style[1]
@@ -338,9 +351,10 @@ transcript_vis_region <- function(gene_anno,
     base::stop('invalid display_mode!')
   }
   
-  show_name <- show_name[1]
-  if(!(show_name %in% c('none','gene_name','gene_id','transcript_name','transcript_id'))){
-    base::stop('invalid show_name!')
+  if(!base::is.null(show_name)){
+    if(!(show_name %in% base::colnames(gene_anno@elementMetadata))){
+      base::stop(base::paste0('gene_anno must contain the column: ',show_name,'!'))
+    }
   }
   
   if(base::class(region) != 'GRanges'){
@@ -355,7 +369,7 @@ transcript_vis_region <- function(gene_anno,
   IRanges::start(region) <- IRanges::start(region) - up_extend
   IRanges::end(region) <- IRanges::end(region) + down_extend
   
-  #modify gene_anno
+  #initialize gene_anno
   if(display_by == 'gene'){
     #check data
     if(!('gene_id' %in% base::colnames(gene_anno@elementMetadata))){
@@ -368,15 +382,7 @@ transcript_vis_region <- function(gene_anno,
     #modify
     gene_anno$unique_id <- base::as.character(gene_anno$gene_id)
     
-    idx <- base::which(gene_anno$type != 'transcript')
-    gene_anno <- gene_anno[idx]
-    idx <- base::which(gene_anno$type == 'gene')
-    gene_anno@elementMetadata[idx,"type"] <- 'transcript'
   }else if(display_by == 'transcript'){
-    #remove gene
-    idx <- base::which(gene_anno$type != 'gene')
-    gene_anno <- gene_anno[idx]
-    
     #check data
     if(!('transcript_id' %in% base::colnames(gene_anno@elementMetadata))){
       base::stop('gene_anno must contain the column: transcript_id!')
@@ -387,34 +393,64 @@ transcript_vis_region <- function(gene_anno,
     
     #modify
     gene_anno$unique_id <- base::as.character(gene_anno$transcript_id)
+    
   }else{
     base::stop('I can not believe this happened, LOL')
   }
   
-  #add unique name
-  if(show_name != 'none'){
-    if(!(show_name %in% base::colnames(gene_anno@elementMetadata))){
-      base::stop(base::paste0('gene_anno must contain the column: ',show_name,'!'))
-    }
-    gene_anno$unique_name <- base::as.character(gene_anno@elementMetadata[,show_name])
-  }else{
+  if(base::is.null(show_name)){
     gene_anno$unique_name <- NA
+  }else{
+    gene_anno$unique_name <- base::as.character(gene_anno@elementMetadata[,show_name])
   }
   
-  #group gene_anno
-  if(display_mode == 'squish'){
-    gene_anno$cluster <- 1
-    gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region)
-    if(base::length(gene_anno) > 0){
-      gene_anno <- group_transcripts(gene_anno = gene_anno,column_name = 'unique_id')
+  gene_anno$cluster <- 1
+  
+  #subset gene_anno
+  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region)
+  
+  #modify gene_anno
+  if(base::length(gene_anno) != 0){
+    #generate gene region if display by gene
+    if(display_by == 'gene'){
+      gene_list <- base::unique(base::as.character(gene_anno$gene_id))
+      gene_list <- base::do.call(what = base::c,args = base::lapply(X = gene_list,FUN = function(x){
+        idx <- base::which(gene_anno$gene_id == x)
+        temp_anno <- gene_anno[idx]
+        
+        chr <- base::unique(base::as.character(temp_anno@seqnames))
+        start_site <- base::as.character(base::min(IRanges::start(temp_anno)))
+        end_site <- base::as.character(base::max(IRanges::end(temp_anno)))
+        
+        temp_gene_region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
+        temp_gene_region@seqinfo <- temp_anno@seqinfo
+        temp_gene_region$type <- 'transcript'
+        temp_gene_region$unique_id <- base::unique(base::as.character(temp_anno$unique_id))
+        temp_name <- base::unique(base::as.character(temp_anno$unique_name))
+        if(base::length(temp_name) != 1){
+          temp_gene_region$unique_name <- NA
+        }else{
+          temp_gene_region$unique_name <- temp_name
+        }
+        
+        return(temp_gene_region)
+      }))
+      
+      idx <- base::which(gene_anno$type != 'transcript')
+      gene_anno <- c(gene_anno[idx],gene_list)
     }
-    gene_anno$cluster <- base::max(gene_anno$cluster) - gene_anno$cluster + 1
-  }else if(display_mode == 'full'){
-    gene_anno$cluster <- gene_anno$unique_id
-  }else if(display_mode == 'collapse'){
-    gene_anno$cluster <- 1
-  }else{
-    base::stop('I can not believe this happened, LOL')
+    
+    #group gene_anno
+    if(display_mode == 'squish'){
+      gene_anno <- group_transcripts(gene_anno = gene_anno,column_name = 'unique_id')
+      gene_anno$cluster <- base::max(gene_anno$cluster) - gene_anno$cluster + 1
+    }else if(display_mode == 'full'){
+      gene_anno$cluster <- gene_anno$unique_id
+    }else if(display_mode == 'collapse'){
+      gene_anno$cluster <- 1
+    }else{
+      base::stop('I can not believe this happened, LOL')
+    }
   }
   
   #plot
