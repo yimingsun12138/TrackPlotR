@@ -258,6 +258,7 @@ feature_vis_gene <- function(features,
   }
   
   #get gene region
+  #note: directly search the gene or merge all transcripts into a gene?
   idx <- base::which((gene_anno$type == 'gene') & (gene_anno@elementMetadata[,column_name] == gene))
   if(base::length(idx) == 0){
     base::stop(base::paste(gene,'not found in the annotation!',sep = ' '))
@@ -470,6 +471,87 @@ transcript_vis_region <- function(gene_anno,
   if(style == 'style_1'){
     transcript_plot <- transcript_plot
   }
+  
+  #return
+  return(transcript_plot)
+}
+
+#' Gene track visualization
+#' 
+#' @description
+#' Generate specified gene track plot. 
+#' This function is specifically optimized for visualizing specified genes using `TrackPlotR::transcript_vis_region`.
+#' 
+#' @param gene_anno Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information. Ensembl GTF file is recommended.
+#' @param column_name Which column in gene_anno to be searched for the specified gene name?
+#' @param gene The name of the specified gene.
+#' @param up_extend How many base pairs to extend upstream the gene?
+#' @param down_extend How many base pairs to extend downstream the gene?
+#' @param show_only Only show the specified gene or show other genes overlapped with the track region as well.
+#' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
+#' @param arrow_break The gap between neighbor arrows equals to region width times arrow_break.
+#' @param display_mode Display mode provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
+#' @param ... Try `?TrackPlotR::transcript_vis_region` for more parameter information.
+#' 
+#' @return A ggplot object
+#' 
+#' @export
+gene_track_vis <- function(gene_anno,
+                           column_name,
+                           gene,
+                           up_extend = 3000,
+                           down_extend = 3000,
+                           show_only = TRUE,
+                           style = c('style_1'),
+                           arrow_break = 0.04,
+                           display_mode = c('squish','full','collapse'),
+                           ...){
+  
+  #check parameter
+  if(base::class(gene_anno) != 'GRanges'){
+    gene_anno <- rtracklayer::import(con = gene_anno,format = 'gtf')
+  }
+  
+  if(!base::all(c('type',column_name) %in% base::colnames(gene_anno@elementMetadata))){
+    base::stop(base::paste0('gene_anno must contain two columns: type and ',column_name,'!'))
+  }
+  
+  #get gene region
+  #note: directly search the gene or merge all transcripts into a gene?
+  idx <- base::which((gene_anno$type == 'gene') & (gene_anno@elementMetadata[,column_name] == gene))
+  if(base::length(idx) == 0){
+    base::stop(base::paste(gene,'not found in the annotation!',sep = ' '))
+  }
+  if(base::length(idx) > 1){
+    base::stop('multiple gene regions detected in the annotation!')
+  }
+  
+  region <- gene_anno[idx]
+  if(region@strand == '-'){
+    IRanges::start(region) <- IRanges::start(region) - down_extend
+    IRanges::end(region) <- IRanges::end(region) + up_extend
+  }else{
+    IRanges::start(region) <- IRanges::start(region) - up_extend
+    IRanges::end(region) <- IRanges::end(region) + down_extend
+  }
+  
+  #subset gene_anno
+  if(show_only){
+    idx <- base::which(gene_anno@elementMetadata[,column_name] == gene)
+    gene_anno <- gene_anno[idx]
+  }
+  
+  #plot
+  transcript_plot <- transcript_vis_region(gene_anno = gene_anno,
+                                           region = region,
+                                           up_extend = 0,
+                                           down_extend = 0,
+                                           style = style,
+                                           arrow_break = arrow_break,
+                                           display_by = 'gene',
+                                           display_mode = display_mode,
+                                           show_name = column_name,
+                                           ...)
   
   #return
   return(transcript_plot)
