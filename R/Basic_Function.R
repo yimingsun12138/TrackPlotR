@@ -426,10 +426,13 @@ transcript_vis_basic <- function(anno,
           arrow_start_site <- single_arrow$end
           single_arrow$start <- arrow_start_site - (break_length * (y - 1))
           single_arrow$end <- arrow_start_site - (break_length * y)
-        }else{
+        }else if(single_arrow$strand == '+'){
           arrow_start_site <- single_arrow$start
           single_arrow$start <- arrow_start_site + (break_length * (y - 1))
           single_arrow$end <- arrow_start_site + (break_length * y)
+        }else{
+          single_arrow$start <- 0
+          single_arrow$end <- 0
         }
         
         return(single_arrow)

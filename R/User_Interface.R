@@ -422,8 +422,14 @@ transcript_vis_region <- function(gene_anno,
         chr <- base::unique(base::as.character(temp_anno@seqnames))
         start_site <- base::as.character(base::min(IRanges::start(temp_anno)))
         end_site <- base::as.character(base::max(IRanges::end(temp_anno)))
+        strand_sign <- base::unique(base::as.character(temp_anno@strand))
         
-        temp_gene_region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
+        if(base::length(strand_sign) != 1){
+          temp_gene_region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site,':*'),Class = 'GRanges')
+        }else{
+          temp_gene_region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site,':',strand_sign),Class = 'GRanges')
+        }
+        
         temp_gene_region$type <- 'transcript'
         temp_gene_region$unique_id <- base::unique(base::as.character(temp_anno$unique_id))
         temp_name <- base::unique(base::as.character(temp_anno$unique_name))
