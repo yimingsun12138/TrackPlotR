@@ -20,11 +20,11 @@ transcript_vis_region(
 \arguments{
 \item{gene_anno}{Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information. Ensembl GTF file is recommended.}
 
-\item{region}{Genome region used to generate the feature track plot, must be a GRanges object.}
+\item{region}{Genome region used to generate the transcript track plot, must be a GRanges object.}
 
 \item{up_extend}{How many base pairs to extend upstream the region?}
 
-\item{down_extend}{How many base pairs to extend upstream the region?}
+\item{down_extend}{How many base pairs to extend downstream the region?}
 
 \item{style}{Plot style provided by package, check the \href{https://github.com/yimingsun12138/TrackPlotR}{document} for details.}
 
@@ -36,7 +36,7 @@ transcript_vis_region(
 
 \item{show_name}{Which column in gene_anno stores the transcript/gene names to be plotted? Set to NULL and no name will be shown.}
 
-\item{...}{Try \code{?TrackPlotR::transcript_vis_basic} for more parameters.}
+\item{...}{Try \code{?TrackPlotR::transcript_vis_basic} for more parameter information.}
 }
 \value{
 A ggplot object.

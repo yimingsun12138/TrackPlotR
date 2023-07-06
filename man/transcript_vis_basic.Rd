@@ -21,8 +21,8 @@ transcript_vis_basic(
 )
 }
 \arguments{
-\item{anno}{A GTF-like genome annotation GRanges object, which contains at least two columns: type and cluster.
-Column type stores the type of element on the genome (gene, transcripts, exon, CDS...),
+\item{anno}{A GTF-like gene annotation GRanges object, which contains at least two columns: type and cluster.
+Column type stores the type of element on the genome (gene, transcript, exon, CDS...),
 column cluster indicates the position on y axis.}
 
 \item{region}{Genome region used to generate the transcript track plot, must be a GRanges object.}
@@ -53,5 +53,5 @@ column cluster indicates the position on y axis.}
 A ggplot object.
 }
 \description{
-Generate transcript track plot to visualize GTF-like genome annotation.
+Generate transcript track plot to visualize GTF-like gene annotation.
 }

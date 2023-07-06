@@ -107,6 +107,7 @@ coverage_vis_gene <- function(coverage_table,
   }
   
   #get gene region
+  #note: directly search the gene or merge all transcripts into a gene?
   idx <- base::which((gene_anno$type == 'gene') & (gene_anno@elementMetadata[,column_name] == gene))
   if(base::length(idx) == 0){
     base::stop(base::paste(gene,'not found in the annotation!',sep = ' '))
@@ -297,15 +298,15 @@ feature_vis_gene <- function(features,
 #' and is specifically optimized for Ensembl GTF file.
 #' 
 #' @param gene_anno Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information. Ensembl GTF file is recommended.
-#' @param region Genome region used to generate the feature track plot, must be a GRanges object.
+#' @param region Genome region used to generate the transcript track plot, must be a GRanges object.
 #' @param up_extend How many base pairs to extend upstream the region?
-#' @param down_extend How many base pairs to extend upstream the region?
+#' @param down_extend How many base pairs to extend downstream the region?
 #' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
 #' @param arrow_break The gap between neighbor arrows equals to region width times arrow_break.
 #' @param display_by Display by transcripts or display by genes?
 #' @param display_mode Display mode provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
 #' @param show_name Which column in gene_anno stores the transcript/gene names to be plotted? Set to NULL and no name will be shown.
-#' @param ... Try `?TrackPlotR::transcript_vis_basic` for more parameters.
+#' @param ... Try `?TrackPlotR::transcript_vis_basic` for more parameter information.
 #' 
 #' @return A ggplot object.
 #' 

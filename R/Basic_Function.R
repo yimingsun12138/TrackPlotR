@@ -71,7 +71,7 @@ coverage_vis_basic <- function(coverage_table,
                                col_pal = NULL){
   
   #check parameter
-  if(base::sum(!(c('seqnames','start','end','score','Sample') %in% base::colnames(coverage_table))) > 0){
+  if(!base::all(c('seqnames','start','end','score','Sample') %in% base::colnames(coverage_table))){
     base::stop('missing columns in coverage_table!')
   }
   
@@ -82,8 +82,8 @@ coverage_vis_basic <- function(coverage_table,
       base::stop('only 1 region required!')
     }else{
       chr <- base::as.character(region@seqnames)
-      start_site <- region@ranges@start
-      end_site <- region@ranges@start + region@ranges@width - 1
+      start_site <- IRanges::start(region)
+      end_site <- IRanges::end(region)
     }
   }
   
@@ -170,8 +170,8 @@ feature_vis_basic <- function(Ranges,
       base::stop('only 1 region required!')
     }else{
       chr <- base::as.character(region@seqnames)
-      start_site <- region@ranges@start
-      end_site <- region@ranges@start + region@ranges@width - 1
+      start_site <- IRanges::start(region)
+      end_site <- IRanges::end(region)
     }
   }
   
@@ -186,7 +186,7 @@ feature_vis_basic <- function(Ranges,
     }
   }
   
-  #assign range list name
+  #assign GRanges list name
   if(base::is.null(base::names(Ranges))){
     base::names(Ranges) <- base::paste('Feature',base::as.character(c(1:(base::length(Ranges)))),sep = '_')
   }
@@ -199,14 +199,26 @@ feature_vis_basic <- function(Ranges,
       Range_2 <- Ranges[[x[2]]]
       return(IRanges::intersect(x = Range_1,y = Range_2))
     }))
+    
     if(base::length(overlapped_range) == 0){
       overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
     }else{
       overlapped_range <- IRanges::subsetByOverlaps(x = overlapped_range,ranges = region)
       if(base::length(overlapped_range) == 0){
         overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
+      }else{
+        #truncate range
+        idx <- base::which(IRanges::start(overlapped_range) < start_site)
+        if(base::length(idx) > 0){
+          IRanges::start(overlapped_range)[idx] <- start_site
+        }
+        idx <- base::which(IRanges::end(overlapped_range) > end_site)
+        if(base::length(idx) > 0){
+          IRanges::end(overlapped_range)[idx] <- end_site
+        }
       }
     }
+    
     overlapped_range <- IRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE)
     S4Vectors::mcols(overlapped_range) <- NULL
     overlapped_range <- rtracklayer::as.data.frame(overlapped_range,row.names = NULL)
@@ -222,6 +234,16 @@ feature_vis_basic <- function(Ranges,
     temp_Range <- IRanges::subsetByOverlaps(x = temp_Range,ranges = region)
     if(base::length(temp_Range) == 0){
       temp_Range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
+    }else{
+      #truncate range
+      idx <- base::which(IRanges::start(temp_Range) < start_site)
+      if(base::length(idx) > 0){
+        IRanges::start(temp_Range)[idx] <- start_site
+      }
+      idx <- base::which(IRanges::end(temp_Range) > end_site)
+      if(base::length(idx) > 0){
+        IRanges::end(temp_Range)[idx] <- end_site
+      }
     }
     
     temp_Range <- rtracklayer::as.data.frame(temp_Range,row.names = NULL)
@@ -272,10 +294,10 @@ feature_vis_basic <- function(Ranges,
 #' Basic function for transcript visualization
 #' 
 #' @description
-#' Generate transcript track plot to visualize GTF-like genome annotation.
+#' Generate transcript track plot to visualize GTF-like gene annotation.
 #' 
-#' @param anno A GTF-like genome annotation GRanges object, which contains at least two columns: type and cluster.
-#' Column type stores the type of element on the genome (gene, transcripts, exon, CDS...), 
+#' @param anno A GTF-like gene annotation GRanges object, which contains at least two columns: type and cluster.
+#' Column type stores the type of element on the genome (gene, transcript, exon, CDS...), 
 #' column cluster indicates the position on y axis.
 #' @param region Genome region used to generate the transcript track plot, must be a GRanges object.
 #' @param transcript_width Line width used to draw the transcript.
@@ -312,8 +334,8 @@ transcript_vis_basic <- function(anno,
     anno <- rtracklayer::as.data.frame(anno,row.names = NULL)
   }
   
-  if(base::sum(!(c('type','cluster') %in% base::colnames(anno))) > 0){
-    base::stop('anno must contain 2 columns: type and cluster.')
+  if(!base::all(c('type','cluster') %in% base::colnames(anno))){
+    base::stop('anno must contain 2 columns: type and cluster!')
   }else{
     anno$type <- base::as.character(anno$type)
     anno$cluster <- base::as.character(anno$cluster)
@@ -334,8 +356,8 @@ transcript_vis_basic <- function(anno,
       base::stop('only 1 region required!')
     }else{
       chr <- base::as.character(region@seqnames)
-      start_site <- region@ranges@start
-      end_site <- region@ranges@start + region@ranges@width - 1
+      start_site <- IRanges::start(region)
+      end_site <- IRanges::end(region)
     }
   }
   
@@ -347,17 +369,27 @@ transcript_vis_basic <- function(anno,
   idx <- base::which((anno$seqnames == chr) & (anno$end >= start_site) & (anno$start <= end_site))
   
   if(base::length(idx) == 0){
-    transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '',row.names = NULL)
+    transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = NA,row.names = NULL)
     transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
-    exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '',row.names = NULL)
-    CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '',row.names = NULL)
+    exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = NA,row.names = NULL)
+    CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = NA,row.names = NULL)
   }else{
     anno <- anno[idx,,drop = FALSE]
+    
+    #truncate range
+    idx <- base::which(anno$start < start_site)
+    if(base::length(idx) > 0){
+      anno[idx,'start'] <- start_site
+    }
+    idx <- base::which(anno$end > end_site)
+    if(base::length(idx) > 0){
+      anno[idx,'end'] <- end_site
+    }
     
     #transcript table
     idx <- base::which(anno$type == 'transcript')
     if(base::length(idx) == 0){
-      transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = '',row.names = NULL)
+      transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = NA,row.names = NULL)
     }else{
       transcript_table <- anno[idx,,drop = FALSE]
     }
@@ -366,7 +398,7 @@ transcript_vis_basic <- function(anno,
     #exon table
     idx <- base::which(anno$type == 'exon')
     if(base::length(idx) == 0){
-      exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = '',row.names = NULL)
+      exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = NA,row.names = NULL)
     }else{
       exon_table <- anno[idx,,drop = FALSE]
     }
@@ -374,7 +406,7 @@ transcript_vis_basic <- function(anno,
     #CDS table
     idx <- base::which(anno$type == 'CDS')
     if(base::length(idx) == 0){
-      CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = '',row.names = NULL)
+      CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = NA,row.names = NULL)
     }else{
       CDS_table <- anno[idx,,drop = FALSE]
     }
