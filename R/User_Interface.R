@@ -117,7 +117,7 @@ coverage_vis_gene <- function(coverage_table,
   }
   
   region <- gene_anno[idx]
-  if(region@strand == '-'){
+  if(base::as.character(region@strand) == '-'){
     IRanges::start(region) <- IRanges::start(region) - down_extend
     IRanges::end(region) <- IRanges::end(region) + up_extend
   }else{
@@ -268,7 +268,7 @@ feature_vis_gene <- function(features,
   }
   
   region <- gene_anno[idx]
-  if(region@strand == '-'){
+  if(base::as.character(region@strand) == '-'){
     IRanges::start(region) <- IRanges::start(region) - down_extend
     IRanges::end(region) <- IRanges::end(region) + up_extend
   }else{
@@ -527,7 +527,7 @@ gene_track_vis <- function(gene_anno,
   }
   
   region <- gene_anno[idx]
-  if(region@strand == '-'){
+  if(base::as.character(region@strand) == '-'){
     IRanges::start(region) <- IRanges::start(region) - down_extend
     IRanges::end(region) <- IRanges::end(region) + up_extend
   }else{

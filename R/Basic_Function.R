@@ -422,11 +422,11 @@ transcript_vis_basic <- function(anno,
       breaked_transcript <- base::do.call(what = base::rbind,args = base::lapply(X = 1:arrow_number,FUN = function(y){
         single_arrow <- single_transcript
         
-        if(single_arrow$strand == '-'){
+        if(base::as.character(single_arrow$strand) == '-'){
           arrow_start_site <- single_arrow$end
           single_arrow$start <- arrow_start_site - (break_length * (y - 1))
           single_arrow$end <- arrow_start_site - (break_length * y)
-        }else if(single_arrow$strand == '+'){
+        }else if(base::as.character(single_arrow$strand) == '+'){
           arrow_start_site <- single_arrow$start
           single_arrow$start <- arrow_start_site + (break_length * (y - 1))
           single_arrow$end <- arrow_start_site + (break_length * y)
