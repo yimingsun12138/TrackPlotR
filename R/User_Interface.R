@@ -423,7 +423,6 @@ transcript_vis_region <- function(gene_anno,
         end_site <- base::as.character(base::max(IRanges::end(temp_anno)))
         
         temp_gene_region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
-        temp_gene_region@seqinfo <- temp_anno@seqinfo
         temp_gene_region$type <- 'transcript'
         temp_gene_region$unique_id <- base::unique(base::as.character(temp_anno$unique_id))
         temp_name <- base::unique(base::as.character(temp_anno$unique_name))
