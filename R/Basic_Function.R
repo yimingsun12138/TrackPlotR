@@ -82,8 +82,8 @@ coverage_vis_basic <- function(coverage_table,
       base::stop('only 1 region required!')
     }else{
       chr <- base::as.character(region@seqnames)
-      start_site <- IRanges::start(region)
-      end_site <- IRanges::end(region)
+      start_site <- GenomicRanges::start(region)
+      end_site <- GenomicRanges::end(region)
     }
   }
   
@@ -170,8 +170,8 @@ feature_vis_basic <- function(Ranges,
       base::stop('only 1 region required!')
     }else{
       chr <- base::as.character(region@seqnames)
-      start_site <- IRanges::start(region)
-      end_site <- IRanges::end(region)
+      start_site <- GenomicRanges::start(region)
+      end_site <- GenomicRanges::end(region)
     }
   }
   
@@ -197,29 +197,29 @@ feature_vis_basic <- function(Ranges,
     overlapped_range <- base::do.call(what = base::c,args = base::lapply(X = idx,FUN = function(x){
       Range_1 <- Ranges[[x[1]]]
       Range_2 <- Ranges[[x[2]]]
-      return(IRanges::intersect(x = Range_1,y = Range_2))
+      return(GenomicRanges::intersect(x = Range_1,y = Range_2,ignore.strand = TRUE))
     }))
     
     if(base::length(overlapped_range) == 0){
       overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
     }else{
-      overlapped_range <- IRanges::subsetByOverlaps(x = overlapped_range,ranges = region)
+      overlapped_range <- IRanges::subsetByOverlaps(x = overlapped_range,ranges = region,ignore.strand = TRUE)
       if(base::length(overlapped_range) == 0){
         overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
       }else{
         #truncate range
-        idx <- base::which(IRanges::start(overlapped_range) < start_site)
+        idx <- base::which(GenomicRanges::start(overlapped_range) < start_site)
         if(base::length(idx) > 0){
-          IRanges::start(overlapped_range)[idx] <- start_site
+          GenomicRanges::start(overlapped_range)[idx] <- start_site
         }
-        idx <- base::which(IRanges::end(overlapped_range) > end_site)
+        idx <- base::which(GenomicRanges::end(overlapped_range) > end_site)
         if(base::length(idx) > 0){
-          IRanges::end(overlapped_range)[idx] <- end_site
+          GenomicRanges::end(overlapped_range)[idx] <- end_site
         }
       }
     }
     
-    overlapped_range <- IRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE)
+    overlapped_range <- GenomicRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE,ignore.strand = TRUE)
     S4Vectors::mcols(overlapped_range) <- NULL
     overlapped_range <- rtracklayer::as.data.frame(overlapped_range,row.names = NULL)
     overlapped_range$track <- 'Feature'
@@ -231,18 +231,18 @@ feature_vis_basic <- function(Ranges,
     S4Vectors::mcols(temp_Range) <- NULL
     
     #subset Range by overlap
-    temp_Range <- IRanges::subsetByOverlaps(x = temp_Range,ranges = region)
+    temp_Range <- IRanges::subsetByOverlaps(x = temp_Range,ranges = region,ignore.strand = TRUE)
     if(base::length(temp_Range) == 0){
       temp_Range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
     }else{
       #truncate range
-      idx <- base::which(IRanges::start(temp_Range) < start_site)
+      idx <- base::which(GenomicRanges::start(temp_Range) < start_site)
       if(base::length(idx) > 0){
-        IRanges::start(temp_Range)[idx] <- start_site
+        GenomicRanges::start(temp_Range)[idx] <- start_site
       }
-      idx <- base::which(IRanges::end(temp_Range) > end_site)
+      idx <- base::which(GenomicRanges::end(temp_Range) > end_site)
       if(base::length(idx) > 0){
-        IRanges::end(temp_Range)[idx] <- end_site
+        GenomicRanges::end(temp_Range)[idx] <- end_site
       }
     }
     
@@ -356,8 +356,8 @@ transcript_vis_basic <- function(anno,
       base::stop('only 1 region required!')
     }else{
       chr <- base::as.character(region@seqnames)
-      start_site <- IRanges::start(region)
-      end_site <- IRanges::end(region)
+      start_site <- GenomicRanges::start(region)
+      end_site <- GenomicRanges::end(region)
     }
   }
   
@@ -550,8 +550,8 @@ group_transcripts <- function(gene_anno,
     if(base::length(chr) != 1){
       base::stop('check the seqname for each transcript/gene!')
     }
-    start_site <- base::as.character(base::min(IRanges::start(temp_anno)))
-    end_site <- base::as.character(base::max(IRanges::end(temp_anno)))
+    start_site <- base::as.character(base::min(GenomicRanges::start(temp_anno)))
+    end_site <- base::as.character(base::max(GenomicRanges::end(temp_anno)))
     
     temp_anno <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
     temp_anno$unique_name <- x
@@ -560,7 +560,7 @@ group_transcripts <- function(gene_anno,
   }))
   
   #group transcript
-  idx <- base::order(IRanges::start(transcript_list),decreasing = FALSE)
+  idx <- base::order(GenomicRanges::start(transcript_list),decreasing = FALSE)
   transcript_list <- transcript_list[idx]
   
   ordered_transcript_list <- transcript_list[1]
@@ -568,21 +568,21 @@ group_transcripts <- function(gene_anno,
   transcript_list <- transcript_list[-1]
   
   cluster_list <- c(1)
-  cluster_end <- c(IRanges::end(ordered_transcript_list))
+  cluster_end <- c(GenomicRanges::end(ordered_transcript_list))
   
   while(base::length(transcript_list) > 0){
     temp_transcript <- transcript_list[1]
     transcript_list <- transcript_list[-1]
     
-    idx <- base::which(IRanges::start(temp_transcript) > cluster_end)
+    idx <- base::which(GenomicRanges::start(temp_transcript) > cluster_end)
     if(base::length(idx) == 0){
       temp_transcript$cluster <- base::max(cluster_list) + 1
       cluster_list <- c(cluster_list,temp_transcript$cluster)
-      cluster_end <- c(cluster_end,IRanges::end(temp_transcript))
+      cluster_end <- c(cluster_end,GenomicRanges::end(temp_transcript))
     }else{
       idx <- base::min(idx)
       temp_transcript$cluster <- cluster_list[idx]
-      cluster_end[idx] <- IRanges::end(temp_transcript)
+      cluster_end[idx] <- GenomicRanges::end(temp_transcript)
     }
     
     ordered_transcript_list <- c(ordered_transcript_list,temp_transcript)

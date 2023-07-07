@@ -18,5 +18,4 @@ Imports:
     IRanges,
     GenomicRanges,
     rtracklayer,
-    tidyr,
-    tidyverse
+    tidyr

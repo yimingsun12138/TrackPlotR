@@ -42,8 +42,8 @@ coverage_vis_region <- function(coverage_table,
   }
   
   #extend region
-  IRanges::start(region) <- IRanges::start(region) - up_extend
-  IRanges::end(region) <- IRanges::end(region) + down_extend
+  GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+  GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
   
   #check style
   style <- style[1]
@@ -118,11 +118,11 @@ coverage_vis_gene <- function(coverage_table,
   
   region <- gene_anno[idx]
   if(base::as.character(region@strand) == '-'){
-    IRanges::start(region) <- IRanges::start(region) - down_extend
-    IRanges::end(region) <- IRanges::end(region) + up_extend
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - down_extend
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + up_extend
   }else{
-    IRanges::start(region) <- IRanges::start(region) - up_extend
-    IRanges::end(region) <- IRanges::end(region) + down_extend
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
   }
   
   #plot
@@ -190,8 +190,8 @@ feature_vis_region <- function(features,
   }
   
   #extend region
-  IRanges::start(region) <- IRanges::start(region) - up_extend
-  IRanges::end(region) <- IRanges::end(region) + down_extend
+  GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+  GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
   
   #check style
   style <- style[1]
@@ -269,11 +269,11 @@ feature_vis_gene <- function(features,
   
   region <- gene_anno[idx]
   if(base::as.character(region@strand) == '-'){
-    IRanges::start(region) <- IRanges::start(region) - down_extend
-    IRanges::end(region) <- IRanges::end(region) + up_extend
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - down_extend
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + up_extend
   }else{
-    IRanges::start(region) <- IRanges::start(region) - up_extend
-    IRanges::end(region) <- IRanges::end(region) + down_extend
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
   }
   
   #plot
@@ -368,8 +368,8 @@ transcript_vis_region <- function(gene_anno,
   }
   
   #extend region
-  IRanges::start(region) <- IRanges::start(region) - up_extend
-  IRanges::end(region) <- IRanges::end(region) + down_extend
+  GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+  GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
   
   #initialize gene_anno
   if(display_by == 'gene'){
@@ -409,7 +409,7 @@ transcript_vis_region <- function(gene_anno,
   gene_anno$cluster <- 1
   
   #subset gene_anno
-  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region)
+  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region,ignore.strand = TRUE)
   
   #modify gene_anno
   if(base::length(gene_anno) != 0){
@@ -421,8 +421,8 @@ transcript_vis_region <- function(gene_anno,
         temp_anno <- gene_anno[idx]
         
         chr <- base::unique(base::as.character(temp_anno@seqnames))
-        start_site <- base::as.character(base::min(IRanges::start(temp_anno)))
-        end_site <- base::as.character(base::max(IRanges::end(temp_anno)))
+        start_site <- base::as.character(base::min(GenomicRanges::start(temp_anno)))
+        end_site <- base::as.character(base::max(GenomicRanges::end(temp_anno)))
         strand_sign <- base::unique(base::as.character(temp_anno@strand))
         
         if(base::length(strand_sign) != 1){
@@ -528,11 +528,11 @@ gene_track_vis <- function(gene_anno,
   
   region <- gene_anno[idx]
   if(base::as.character(region@strand) == '-'){
-    IRanges::start(region) <- IRanges::start(region) - down_extend
-    IRanges::end(region) <- IRanges::end(region) + up_extend
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - down_extend
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + up_extend
   }else{
-    IRanges::start(region) <- IRanges::start(region) - up_extend
-    IRanges::end(region) <- IRanges::end(region) + down_extend
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
   }
   
   #subset gene_anno
