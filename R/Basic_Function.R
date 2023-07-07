@@ -134,8 +134,8 @@ coverage_vis_basic <- function(coverage_table,
       ggplot2::scale_fill_manual(values = col_pal,breaks = sample_order)
   }else{
     gg_object <- gg_object + 
-      ggplot2::scale_color_manual(breaks = sample_order) + 
-      ggplot2::scale_fill_manual(breaks = sample_order)
+      ggplot2::scale_color_discrete(breaks = sample_order) + 
+      ggplot2::scale_fill_discrete(breaks = sample_order)
   }
   
   #return
@@ -284,7 +284,7 @@ feature_vis_basic <- function(Ranges,
       ggplot2::scale_color_manual(values = col_pal,breaks = base::names(Ranges))
   }else{
     gg_object <- gg_object + 
-      ggplot2::scale_color_manual(breaks = base::names(Ranges))
+      ggplot2::scale_color_discrete(breaks = base::names(Ranges))
   }
   
   #return
