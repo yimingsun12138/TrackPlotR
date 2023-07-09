@@ -332,7 +332,7 @@ transcript_vis_region <- function(gene_anno,
     base::stop('gene_anno must contain the column: type!')
   }
   
-  if(sum(gene_anno$type == 'transcript') == 0){
+  if(base::sum(gene_anno$type == 'transcript') == 0){
     base::stop('no transcript found in gene_anno!')
   }
   idx <- base::which(gene_anno$type %in% c('transcript','exon','CDS'))
