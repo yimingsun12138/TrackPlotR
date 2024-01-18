@@ -1,3 +1,64 @@
+#' Truncate GRanges object by specified genome region
+#' 
+#' @description
+#' All segments beyond the specified genome region will be truncated.
+#' 
+#' @param single_Range A single GRanges object to be truncated.
+#' @param chr Chromosome name of the specified genome region.
+#' @param start_site Start position of the specified genome region.
+#' @param end_site End position of the specified genome region.
+#' @param must_return Regulate the returned object in the scenario where the GRanges object doesn't intersect with the specified genome region. If set to TRUE, a GRanges object with a 0-0 range would be returned. If set to FALSE, this function will directly return NULL.
+#' 
+#' @return A truncated GRanges object.
+truncate_GRanges <- function(single_Range,
+                             chr,
+                             start_site,
+                             end_site,
+                             must_return = TRUE){
+  
+  #check parameter
+  if(base::class(single_Range) != 'GRanges'){
+    base::stop('single_Range must be a single GRanges object!')
+  }
+  if(base::length(single_Range) == 0){
+    base::stop('single_Range is empyt!')
+  }
+  
+  #subset by overlap
+  region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
+  subset_Range <- IRanges::subsetByOverlaps(x = single_Range,ranges = region,ignore.strand = TRUE)
+  
+  #return
+  if(base::length(subset_Range) == 0){
+    if(must_return == TRUE){
+      temp <- S4Vectors::mcols(single_Range)[1,,drop = FALSE]
+      subset_Range <- methods::as(object = base::paste0(chr,':','0-0'),'GRanges')
+      S4Vectors::mcols(subset_Range) <- temp
+      return(subset_Range)
+    }else{
+      return(NULL)
+    }
+  }else{
+    #truncate start site
+    each_start_site <- GenomicRanges::start(subset_Range)
+    idx <- base::which(each_start_site < start_site)
+    if(base::length(idx) > 0){
+      each_start_site[idx] <- start_site
+    }
+    
+    #truncate end site
+    each_end_site <- GenomicRanges::end(subset_Range)
+    idx <- base::which(each_end_site > end_site)
+    if(base::length(idx) > 0){
+      each_end_site[idx] <- end_site
+    }
+    
+    GenomicRanges::start(subset_Range) <- each_start_site
+    GenomicRanges::end(subset_Range) <- each_end_site
+    return(subset_Range)
+  }
+}
+
 #' Load BigWig files into R
 #' 
 #' @description
@@ -175,13 +236,19 @@ feature_vis_basic <- function(Ranges,
     }
   }
   
-  #convert to GRanges list
+  #convert to truncated GRanges list
   if(!base::grepl(pattern = 'GRanges',x = base::class(Ranges),fixed = TRUE)){
     base::stop('Ranges must be a GRanges or GRangesList object!')
   }else{
     if(base::grepl(pattern = 'List$',x = base::class(Ranges),fixed = FALSE)){
-      Ranges <- Ranges
+      Ranges_name <- base::names(Ranges)
+      Ranges <- base::do.call(what = S4Vectors::SimpleList,args = base::lapply(X = c(1:(base::length(Ranges))),FUN = function(x){
+        temp_Range <- Ranges[[x]]
+        temp_Range <- truncate_GRanges(single_Range = temp_Range,chr = chr,start_site = start_site,end_site = end_site,must_return = TRUE)
+      }))
+      names(Ranges) <- Ranges_name
     }else{
+      Ranges <- truncate_GRanges(single_Range = Ranges,chr = chr,start_site = start_site,end_site = end_site,must_return = TRUE)
       Ranges <- S4Vectors::SimpleList(Feature = Ranges)
     }
   }
@@ -199,24 +266,8 @@ feature_vis_basic <- function(Ranges,
       Range_2 <- Ranges[[x[2]]]
       return(GenomicRanges::intersect(x = Range_1,y = Range_2,ignore.strand = TRUE))
     }))
-    
     if(base::length(overlapped_range) == 0){
       overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
-    }else{
-      overlapped_range <- IRanges::subsetByOverlaps(x = overlapped_range,ranges = region,ignore.strand = TRUE)
-      if(base::length(overlapped_range) == 0){
-        overlapped_range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
-      }else{
-        #truncate range
-        idx <- base::which(GenomicRanges::start(overlapped_range) < start_site)
-        if(base::length(idx) > 0){
-          GenomicRanges::start(overlapped_range)[idx] <- start_site
-        }
-        idx <- base::which(GenomicRanges::end(overlapped_range) > end_site)
-        if(base::length(idx) > 0){
-          GenomicRanges::end(overlapped_range)[idx] <- end_site
-        }
-      }
     }
     
     overlapped_range <- GenomicRanges::reduce(x = overlapped_range,drop.empty.ranges = FALSE,ignore.strand = TRUE)
@@ -229,22 +280,6 @@ feature_vis_basic <- function(Ranges,
   Ranges_table <- base::do.call(what = base::rbind,args = base::lapply(X = base::names(Ranges),FUN = function(x){
     temp_Range <- Ranges[[x]]
     S4Vectors::mcols(temp_Range) <- NULL
-    
-    #subset Range by overlap
-    temp_Range <- IRanges::subsetByOverlaps(x = temp_Range,ranges = region,ignore.strand = TRUE)
-    if(base::length(temp_Range) == 0){
-      temp_Range <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
-    }else{
-      #truncate range
-      idx <- base::which(GenomicRanges::start(temp_Range) < start_site)
-      if(base::length(idx) > 0){
-        GenomicRanges::start(temp_Range)[idx] <- start_site
-      }
-      idx <- base::which(GenomicRanges::end(temp_Range) > end_site)
-      if(base::length(idx) > 0){
-        GenomicRanges::end(temp_Range)[idx] <- end_site
-      }
-    }
     
     temp_Range <- rtracklayer::as.data.frame(temp_Range,row.names = NULL)
     temp_Range$Feature <- x
@@ -330,11 +365,9 @@ transcript_vis_basic <- function(anno,
   #check parameter
   if(base::class(anno) != 'GRanges'){
     base::stop('anno must be a GRanges object!')
-  }else{
-    anno <- rtracklayer::as.data.frame(anno,row.names = NULL)
   }
   
-  if(!base::all(c('type','cluster') %in% base::colnames(anno))){
+  if(!base::all(c('type','cluster') %in% base::colnames(S4Vectors::mcols(anno)))){
     base::stop('anno must contain 2 columns: type and cluster!')
   }else{
     anno$type <- base::as.character(anno$type)
@@ -342,10 +375,10 @@ transcript_vis_basic <- function(anno,
   }
   
   if(!base::is.null(show_name)){
-    if(!(show_name %in% base::colnames(anno))){
+    if(!(show_name %in% base::colnames(S4Vectors::mcols(anno)))){
       base::stop(base::paste(show_name,'column not found in anno!',sep = ' '))
     }else{
-      anno$anno_name <- base::as.character(anno[,show_name])
+      anno$anno_name <- base::as.character(S4Vectors::mcols(anno)[,show_name])
     }
   }
   
@@ -366,25 +399,15 @@ transcript_vis_basic <- function(anno,
   }
   
   #subset anno by overlap
-  idx <- base::which((anno$seqnames == chr) & (anno$end >= start_site) & (anno$start <= end_site))
+  anno <- truncate_GRanges(single_Range = anno,chr = chr,start_site = start_site,end_site = end_site,must_return = FALSE)
   
-  if(base::length(idx) == 0){
+  if(base::length(anno) == 0){
     transcript_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'transcript',cluster = 1,anno_name = NA,row.names = NULL)
     transcript_table$mid_point <- base::round(x = (transcript_table$start + transcript_table$end)/2,digits = 0)
     exon_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'exon',cluster = 1,anno_name = NA,row.names = NULL)
     CDS_table <- base::data.frame(seqnames = chr,start = 0,end = 0,strand = '+',type = 'CDS',cluster = 1,anno_name = NA,row.names = NULL)
   }else{
-    anno <- anno[idx,,drop = FALSE]
-    
-    #truncate range
-    idx <- base::which(anno$start < start_site)
-    if(base::length(idx) > 0){
-      anno[idx,'start'] <- start_site
-    }
-    idx <- base::which(anno$end > end_site)
-    if(base::length(idx) > 0){
-      anno[idx,'end'] <- end_site
-    }
+    anno <- rtracklayer::as.data.frame(anno,row.names = NULL)
     
     #transcript table
     idx <- base::which(anno$type == 'transcript')
@@ -423,13 +446,13 @@ transcript_vis_basic <- function(anno,
         single_arrow <- single_transcript
         
         if(base::as.character(single_arrow$strand) == '-'){
-          arrow_start_site <- single_arrow$end
-          single_arrow$start <- arrow_start_site - (break_length * (y - 1))
-          single_arrow$end <- arrow_start_site - (break_length * y)
+          transcript_start_site <- single_transcript$end
+          single_arrow$end <- transcript_start_site - (break_length * y)
+          single_arrow$start <- single_arrow$end + 1
         }else if(base::as.character(single_arrow$strand) == '+'){
-          arrow_start_site <- single_arrow$start
-          single_arrow$start <- arrow_start_site + (break_length * (y - 1))
-          single_arrow$end <- arrow_start_site + (break_length * y)
+          transcript_start_site <- single_transcript$start
+          single_arrow$end <- transcript_start_site + (break_length * y)
+          single_arrow$start <- single_arrow$end - 1
         }else{
           single_arrow$start <- 0
           single_arrow$end <- 0
@@ -532,21 +555,21 @@ group_transcripts <- function(gene_anno,
     base::stop('no data in gene_anno!')
   }
   
-  if(!base::all(c('type',column_name) %in% base::colnames(gene_anno@elementMetadata))){
+  if(!base::all(c('type',column_name) %in% base::colnames(S4Vectors::mcols(gene_anno)))){
     base::stop(base::paste0('gene_anno must contain two columns: type and ',column_name,'!'))
   }
   
-  if(!base::all(!base::is.na(gene_anno@elementMetadata[,column_name]))){
+  if(!base::all(!base::is.na(S4Vectors::mcols(gene_anno)[,column_name]))){
     base::stop(base::paste0('NA is not allowed in gene_anno column: ',column_name,'!'))
   }
   
   #get transcript region
-  transcript_list <- base::unique(base::as.character(gene_anno@elementMetadata[,column_name]))
+  transcript_list <- base::unique(base::as.character(S4Vectors::mcols(gene_anno)[,column_name]))
   transcript_list <- base::do.call(what = base::c,args = base::lapply(X = transcript_list,FUN = function(x){
-    idx <- base::which(gene_anno@elementMetadata[,column_name] == x)
+    idx <- base::which(S4Vectors::mcols(gene_anno)[,column_name] == x)
     temp_anno <- gene_anno[idx]
     
-    chr <- base::unique(base::as.character(temp_anno@seqnames))
+    chr <- base::unique(base::as.character(GenomicRanges::seqnames(temp_anno)))
     if(base::length(chr) != 1){
       base::stop('check the seqname for each transcript/gene!')
     }
@@ -566,8 +589,6 @@ group_transcripts <- function(gene_anno,
   ordered_transcript_list <- transcript_list[1]
   ordered_transcript_list$cluster <- 1
   transcript_list <- transcript_list[-1]
-  
-  cluster_list <- c(1)
   cluster_end <- c(GenomicRanges::end(ordered_transcript_list))
   
   while(base::length(transcript_list) > 0){
@@ -576,12 +597,11 @@ group_transcripts <- function(gene_anno,
     
     idx <- base::which(GenomicRanges::start(temp_transcript) > cluster_end)
     if(base::length(idx) == 0){
-      temp_transcript$cluster <- base::max(cluster_list) + 1
-      cluster_list <- c(cluster_list,temp_transcript$cluster)
+      temp_transcript$cluster <- base::length(cluster_end) + 1
       cluster_end <- c(cluster_end,GenomicRanges::end(temp_transcript))
     }else{
       idx <- base::min(idx)
-      temp_transcript$cluster <- cluster_list[idx]
+      temp_transcript$cluster <- idx
       cluster_end[idx] <- GenomicRanges::end(temp_transcript)
     }
     
@@ -591,7 +611,7 @@ group_transcripts <- function(gene_anno,
   #group gene_anno
   cluster_list <- ordered_transcript_list$cluster
   base::names(cluster_list) <- ordered_transcript_list$unique_name
-  gene_anno$cluster <- cluster_list[base::as.character(gene_anno@elementMetadata[,column_name])]
+  gene_anno$cluster <- cluster_list[base::as.character(S4Vectors::mcols(gene_anno)[,column_name])]
   
   #return
   return(gene_anno)
