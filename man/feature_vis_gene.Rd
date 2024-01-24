@@ -21,7 +21,13 @@ feature_vis_gene(
 \arguments{
 \item{features}{A list of bed file paths or a GRanges/GRangesList object which stores the coordinates of genome features.}
 
-\item{gene_anno}{Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information. Ensembl GTF file is recommended.}
+\item{gene_anno}{Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information.
+Ensembl GTF file is recommended. If you wish to use a GTF file from another source, ensure the file contains the following three columns:
+\enumerate{
+\item "type" which stores the types of each gene element, including gene, transcript, exon, and CDS.
+\item "gene_id", storing the gene to which each element belongs, this cannot be NULL or NA.
+\item "transcript_id", storing the transcript to which each element belongs, for each gene element that is not a gene type, the value cannot be NULL or NA.
+}}
 
 \item{column_name}{Which column in gene_anno to be searched for the specified gene name?}
 
