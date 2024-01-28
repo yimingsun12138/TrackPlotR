@@ -482,7 +482,7 @@ transcript_vis_region <- function(gene_anno,
         chr <- base::unique(base::as.character(GenomicRanges::seqnames(temp_anno)))
         start_site <- base::as.character(base::min(GenomicRanges::start(temp_anno)))
         end_site <- base::as.character(base::max(GenomicRanges::end(temp_anno)))
-        strand_sign <- base::unique(base::as.character(temp_anno@strand))
+        strand_sign <- base::unique(base::as.character(GenomicRanges::strand(temp_anno)))
         
         if(base::length(strand_sign) != 1){
           temp_gene_region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site,':*'),Class = 'GRanges')
@@ -593,7 +593,7 @@ gene_track_vis <- function(gene_anno,
   }
   
   region <- gene_anno[idx]
-  if(base::as.character(GenomicRanges::strand(gene_anno)) == '-'){
+  if(base::as.character(GenomicRanges::strand(region)) == '-'){
     GenomicRanges::start(region) <- GenomicRanges::start(region) - down_extend
     if(GenomicRanges::start(region) < 0){
       GenomicRanges::start(region) <- 0
@@ -633,4 +633,164 @@ gene_track_vis <- function(gene_anno,
   
   #return
   return(transcript_plot)
+}
+
+#' Linkage track visualization in the specified genome region
+#' 
+#' @description
+#' Generate linkage track plot in the specified genome region.
+#' 
+#' @param linkage A GRanges object with each range's start and end points representing two loci on the genome where a linkage exists, and the strand represents the direction of the linkage.
+#' @param region Genome region used to generate the linkage track plot, must be a GRanges object.
+#' @param up_extend How many base pairs to extend upstream the region?
+#' @param down_extend How many base pairs to extend downstream the region?
+#' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
+#' @param color_by Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.
+#' @param col_pal A custom palette used to override coloring for each linkage.
+#' @param curve_width Line width used to draw the linkage.
+#' @param max_arrow_length Max line length used to draw the arrow.
+#' 
+#' @return A ggplot object.
+#' 
+#' @export
+linkage_vis_region <- function(linkage,
+                               region,
+                               up_extend = 0,
+                               down_extend = 0,
+                               style = c('style_1'),
+                               color_by = NULL,
+                               col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
+                               curve_width = 0.5,
+                               max_arrow_length = 0.08){
+  
+  #check parameter
+  if(base::class(region) != 'GRanges'){
+    base::stop('region must be a GRanges object!')
+  }else{
+    if(base::length(region) != 1){
+      base::stop('only 1 region required!')
+    }
+  }
+  
+  #extend region
+  GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+  if(GenomicRanges::start(region) < 0){
+    GenomicRanges::start(region) <- 0
+  }
+  GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
+  if(GenomicRanges::end(region) <= GenomicRanges::start(region)){
+    base::stop('Invalid genome region!')
+  }
+  
+  #check style
+  style <- style[1]
+  if(!(style %in% c('style_1'))){
+    base::stop('invalid style!')
+  }
+  
+  #basic plot
+  linkage_plot <- linkage_vis_basic(linkage = linkage,
+                                    region = region,
+                                    color_by = color_by,
+                                    col_pal = col_pal,
+                                    curve_width = curve_width,
+                                    max_arrow_length = max_arrow_length)
+  
+  #style
+  if(style == 'style_1'){
+    linkage_plot <- linkage_plot
+  }
+  
+  #return
+  return(linkage_plot)
+}
+
+#' Linkage track visualization around specified gene region
+#' 
+#' @description
+#' Generate linkage track plot around specified gene region.
+#' 
+#' @param linkage A GRanges object with each range's start and end points representing two loci on the genome where a linkage exists, and the strand represents the direction of the linkage.
+#' @param gene_anno Gene annotation (GTF) file path or a GRanges object which stores the gene annotation information.
+#' Ensembl GTF file is recommended. If you wish to use a GTF file from another source, ensure the file contains the following three columns: 
+#' 1. "type" which stores the types of each gene element, including gene, transcript, exon, and CDS.
+#' 2. "gene_id", storing the gene to which each element belongs, this cannot be NULL or NA.
+#' 3. "transcript_id", storing the transcript to which each element belongs, for each gene element that is not a gene type, the value cannot be NULL or NA.
+#' @param column_name Which column in gene_anno to be searched for the specified gene name?
+#' @param gene The name of the specified gene.
+#' @param up_extend How many base pairs to extend upstream the gene?
+#' @param down_extend How many base pairs to extend downstream the gene?
+#' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
+#' @param color_by Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.
+#' @param col_pal A custom palette used to override coloring for each linkage.
+#' @param curve_width Line width used to draw the linkage.
+#' @param max_arrow_length Max line length used to draw the arrow.
+#' 
+#' @return A ggplot object.
+#' 
+#' @export
+linkage_vis_gene <- function(linkage,
+                             gene_anno,
+                             column_name,
+                             gene,
+                             up_extend = 3000,
+                             down_extend = 3000,
+                             style = c('style_1'),
+                             color_by = NULL,
+                             col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
+                             curve_width = 0.5,
+                             max_arrow_length = 0.08){
+  
+  #check parameter
+  if(base::class(gene_anno) != 'GRanges'){
+    gene_anno <- rtracklayer::import(con = gene_anno,format = 'gtf')
+  }
+  
+  if(!base::all(c('type',column_name) %in% base::colnames(S4Vectors::mcols(gene_anno)))){
+    base::stop(base::paste0('gene_anno must contain two columns: type and ',column_name,'!'))
+  }
+  
+  #get gene region
+  idx <- base::which((gene_anno$type == 'gene') & (S4Vectors::mcols(gene_anno)[,column_name] == gene))
+  if(base::length(idx) == 0){
+    base::stop(base::paste(gene,'not found in the annotation!',sep = ' '))
+  }
+  if(base::length(idx) > 1){
+    base::stop('multiple gene regions detected in the annotation!')
+  }
+  
+  region <- gene_anno[idx]
+  if(base::as.character(GenomicRanges::strand(region)) == '-'){
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - down_extend
+    if(GenomicRanges::start(region) < 0){
+      GenomicRanges::start(region) <- 0
+    }
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + up_extend
+    if(GenomicRanges::end(region) <= GenomicRanges::start(region)){
+      base::stop('Invalid genome region!')
+    }
+  }else{
+    GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
+    if(GenomicRanges::start(region) < 0){
+      GenomicRanges::start(region) <- 0
+    }
+    GenomicRanges::end(region) <- GenomicRanges::end(region) + down_extend
+    if(GenomicRanges::end(region) <= GenomicRanges::start(region)){
+      base::stop('Invalid genome region!')
+    }
+  }
+  
+  #plot
+  linkage_plot <- linkage_vis_region(linkage = linkage,
+                                     region = region,
+                                     up_extend = 0,
+                                     down_extend = 0,
+                                     style = style,
+                                     color_by = color_by,
+                                     col_pal = col_pal,
+                                     curve_width = curve_width,
+                                     max_arrow_length = max_arrow_length)
+  
+  #return
+  return(linkage_plot)
 }

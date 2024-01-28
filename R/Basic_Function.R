@@ -142,7 +142,7 @@ coverage_vis_basic <- function(coverage_table,
     if(base::length(region) != 1){
       base::stop('only 1 region required!')
     }else{
-      chr <- base::as.character(region@seqnames)
+      chr <- base::as.character(GenomicRanges::seqnames(region))
       start_site <- GenomicRanges::start(region)
       end_site <- GenomicRanges::end(region)
     }
@@ -230,7 +230,7 @@ feature_vis_basic <- function(Ranges,
     if(base::length(region) != 1){
       base::stop('only 1 region required!')
     }else{
-      chr <- base::as.character(region@seqnames)
+      chr <- base::as.character(GenomicRanges::seqnames(region))
       start_site <- GenomicRanges::start(region)
       end_site <- GenomicRanges::end(region)
     }
@@ -388,7 +388,7 @@ transcript_vis_basic <- function(anno,
     if(base::length(region) != 1){
       base::stop('only 1 region required!')
     }else{
-      chr <- base::as.character(region@seqnames)
+      chr <- base::as.character(GenomicRanges::seqnames(region))
       start_site <- GenomicRanges::start(region)
       end_site <- GenomicRanges::end(region)
     }
@@ -615,4 +615,174 @@ group_transcripts <- function(gene_anno,
   
   #return
   return(gene_anno)
+}
+
+#' Basic function for genome position linkage visualization
+#' 
+#' @description
+#' Generate directional curves to characterize the linkage between cis-elements on genome, like the activating effect of enhancers to promoters, and so on.
+#' 
+#' @param linkage A GRanges object with each range's start and end points representing two loci on the genome where a linkage exists, and the strand represents the direction of the linkage.
+#' @param region Genome region used to generate the linkage track plot, must be a GRanges object.
+#' @param color_by Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.
+#' @param col_pal A custom palette used to override coloring for each linkage.
+#' @param curve_width Line width used to draw the linkage.
+#' @param max_arrow_length Max line length used to draw the arrow.
+#' 
+#' @return A ggplot object.
+linkage_vis_basic <- function(linkage,
+                              region,
+                              color_by = NULL,
+                              col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
+                              curve_width = 0.5,
+                              max_arrow_length = 0.08){
+  
+  #check parameter
+  if(base::class(linkage) != 'GRanges'){
+    base::stop('linkage must be a GRanges object!')
+  }
+  
+  if(!base::is.null(color_by)){
+    if(!(color_by %in% base::colnames(S4Vectors::mcols(linkage)))){
+      base::stop(base::paste0('linkage must contain the column: ',color_by,'!'))
+    }else{
+      linkage$value <- base::as.numeric(S4Vectors::mcols(linkage)[,color_by])
+    }
+  }else{
+    linkage$value <- 1
+  }
+  
+  if(base::class(region) != 'GRanges'){
+    base::stop('region must be a GRanges object!')
+  }else{
+    if(base::length(region) != 1){
+      base::stop('only 1 region required!')
+    }else{
+      chr <- base::as.character(GenomicRanges::seqnames(region))
+      start_site <- GenomicRanges::start(region)
+      end_site <- GenomicRanges::end(region)
+    }
+  }
+  
+  #subset linkage by region
+  linkage <- IRanges::subsetByOverlaps(x = linkage,ranges = region,ignore.strand = TRUE)
+  if(base::length(linkage) == 0){
+    linkage <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
+    linkage$value <- 1
+  }
+  
+  #break the linkage curve into small segments
+  angles <- base::seq(from = base::pi,to = 2*(base::pi),length.out = 100)
+  radius_list <- base::unlist(base::lapply(X = 1:(base::length(linkage)),FUN = function(x){
+    temp_linkage <- linkage[x]
+    if(base::as.character(GenomicRanges::strand(temp_linkage)) == '-'){
+      temp_radius <- (GenomicRanges::start(temp_linkage) - GenomicRanges::end(temp_linkage))/2
+    }else{
+      temp_radius <- (GenomicRanges::end(temp_linkage) - GenomicRanges::start(temp_linkage))/2
+    }
+    return(temp_radius)
+  }))
+  if(base::max(base::abs(radius_list)) == 0){
+    max_radius <- 1
+  }else{
+    max_radius <- base::max(base::abs(radius_list))
+  }
+  circle_center_list <- c(GenomicRanges::start(linkage) + base::abs(radius_list))
+  
+  breaked_segments <- base::do.call(what = base::rbind,args = base::lapply(X = 1:(base::length(linkage)),FUN = function(x){
+    segment_x_list <- (radius_list[x])*base::cos(angles) + circle_center_list[x]
+    segment_y_list <- (base::abs(radius_list[x])/max_radius)*base::sin(angles) + 0
+    segments_table <- base::data.frame(x = segment_x_list,
+                                       y = segment_y_list,
+                                       group = base::paste0('l',x),
+                                       radius_ratio = base::abs(radius_list[x])/max_radius,
+                                       value = linkage$value[x],
+                                       row.names = NULL)
+    return(segments_table)
+  }))
+  
+  #truncate linkage segments
+  idx_to_remove <- base::which((breaked_segments$x < start_site) | (breaked_segments$x > end_site))
+  if(base::length(idx_to_remove) > 0){
+    breaked_segments <- breaked_segments[-c(idx_to_remove),,drop = FALSE]
+  }
+  
+  #basic plot
+  gg_object <- ggplot2::ggplot(data = breaked_segments,mapping = ggplot2::aes(x = x,y = y,group = group,color = value))
+  for (i in base::unique(breaked_segments$group)) {
+    temp_breaked_segments <- breaked_segments[base::which(breaked_segments$group == i),,drop = FALSE]
+    gg_object <- gg_object + 
+      ggplot2::geom_path(data = temp_breaked_segments,
+                         mapping = ggplot2::aes(x = x,y = y,group = group,color = value),
+                         arrow = grid::arrow(angle = 15,length = grid::unit(x = max_arrow_length*base::unique(base::as.numeric(temp_breaked_segments$radius_ratio)),units = 'inches'),ends = 'last'),
+                         linewidth = curve_width)
+  }
+  
+  gg_object <- gg_object + 
+    ggplot2::ylab('Linkage') + 
+    ggplot2::xlab(base::paste0(chr,' : ',base::format(x = start_site,scientific = FALSE),' - ',base::format(x = end_site,scientific = FALSE))) + 
+    ggplot2::scale_x_continuous(limits = c(start_site,end_site),expand = c(0,0)) + 
+    ggplot2::theme_bw() + 
+    ggplot2::theme(panel.grid = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank(),
+                   axis.text.y = ggplot2::element_blank())
+  
+  #color
+  if(!base::is.null(col_pal)){
+    gg_object <- gg_object + 
+      ggplot2::scale_color_gradientn(colours = base::as.character(col_pal))
+  }
+  
+  #return
+  return(gg_object)
+}
+
+#' Convert a linkage data frame to GRanges object that can be directly used for linkage visualization
+#' 
+#' @description
+#' The GRanges object requires the start position to be less than the end position, which is a bit cumbersome for characterizing the direction of linkage.
+#' Here provides a function that helps to convert a data frame that stores information about pairwise interactions of different loci on the genome into a GRanges object, which is convenient for linkage visualization.
+#' 
+#' @param linkage A data frame that must contain the following three columns: 
+#' 1. The "chrom" column indicates the chromosome where the linkage occurs.
+#' 2. The "start" column represents the starting point of the linkage.
+#' 3. The "end" column denotes the ending point of the linkage.
+#' 
+#' @return A GRanges object.
+#' 
+#' @export
+linkage_table_to_GRanges <- function(linkage){
+  
+  #check parameter
+  linkage <- base::as.data.frame(x = linkage,row.names = NULL)
+  if(!base::all(c('chrom','start','end') %in% base::colnames(linkage))){
+    base::stop('linkage must contain three columns: chrom, start and end!')
+  }
+  if(base::nrow(linkage) < 1){
+    base::stop('No linkage detected!')
+  }
+  
+  #create GRanges object
+  linkage_GRanges <- base::do.call(what = base::c,args = base::lapply(X = 1:(base::nrow(linkage)),FUN = function(x){
+    chr <- base::as.character(linkage[x,'chrom'])
+    if(base::as.numeric(linkage[x,'end']) >= base::as.numeric(linkage[x,'start'])){
+      start_site <- base::as.numeric(linkage[x,'start'])
+      end_site <- base::as.numeric(linkage[x,'end'])
+      strand_sign <- '+'
+    }else{
+      start_site <- base::as.numeric(linkage[x,'end'])
+      end_site <- base::as.numeric(linkage[x,'start'])
+      strand_sign <- '-'
+    }
+    temp <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site,':',strand_sign),Class = 'GRanges')
+    return(temp)
+  }))
+  
+  #add elementMetadata
+  idx_to_remove <- base::which(base::colnames(linkage) %in% c('chrom','start','end'))
+  meta_data <- linkage[,-c(idx_to_remove),drop = FALSE]
+  S4Vectors::mcols(linkage_GRanges) <- meta_data
+  
+  #return
+  return(linkage_GRanges)
 }
