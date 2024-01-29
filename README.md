@@ -130,6 +130,33 @@ print(p3 + theme(aspect.ratio = 0.5))
 
 ![transcript plot by transcript](https://user-images.githubusercontent.com/32930896/252123864-af00b233-53c4-46c2-b6f1-f473b379d240.png "transcript plot by transcript")
 
+### Linkage track plot
+
+What are the interactive relationships between these cis-elements on genome? For example, the activation of enhancer to promoter, co-accessible networks among cis-regulatory elements, etc. TrackPlotR also provides methods for linkage track visualization in the specified genome region or around a certain gene.
+
+```{R}
+#load linkage table and convert to GRanges object
+linkage <- paste(example_path,c('peak2gene_linkage.csv'),sep = '/')
+linkage <- read.csv(file = linkage,header = TRUE,row.names = 1)
+linkage <- linkage_table_to_GRanges(linkage = linkage)
+```
+
+```{R}
+#linkage track plot in the specified genome region
+p4 <- linkage_vis_region(linkage = linkage,region = region,color_by = 'Correlation')
+print(p4 + theme(aspect.ratio = 0.15))
+```
+
+![linkage plot region](https://github.com/yimingsun12138/TrackPlotR/assets/32930896/5d84f621-9f3a-406f-b5f0-b3e040342c21 "linkage plot region")
+
+```{R}
+#linkage plot around a certain gene
+p4 <- linkage_vis_gene(linkage = linkage,gene_anno = human_anno,column_name = 'gene_name',gene = 'FAM107A',up_extend = 50000,down_extend = 50000,color_by = 'Correlation')
+print(p4 + theme(aspect.ratio = 0.15))
+```
+
+![linkage plot gene](https://github.com/yimingsun12138/TrackPlotR/assets/32930896/1c8e98c3-c905-4692-85df-0f1a5b5ffccf "linkage plot gene")
+
 ### Plotting style
 
 Usually, we would like to observe different track plots together, so it is particularly important to set a uniform style for different track plots. Currently, TrackPlotR has only one build-in plotting style, and more styles will be added in the future.
@@ -137,7 +164,8 @@ Usually, we would like to observe different track plots together, so it is parti
 ```{R}
 p1 <- coverage_vis_region(coverage_table = coverage_info,region = region,y_lim = 0.03,sample_order = c('S1','S2','S3','S4'),col_pal = c("#D51F26","#272E6A","#208A42","#89288F"),style = 'style_1')
 p2 <- feature_vis_region(features = peak_info,region = region,col_pal = c("#D51F26","#272E6A","#208A42"),style = 'style_1')
-p3 <- transcript_vis_region(gene_anno = human_anno,region = region,display_by = 'gene',show_name = 'gene_name',style = 'style_1')
+p3 <- linkage_vis_region(linkage = linkage,region = region,color_by = 'Correlation',style = 'style_1')
+p4 <- transcript_vis_region(gene_anno = human_anno,region = region,display_by = 'gene',show_name = 'gene_name',style = 'style_1')
 ```
 
 Thanks to the high flexibility and scalability of ggplot2, we can make more personalized modifications to the images returned by TrackPlotR and stitch them together easily.
@@ -145,10 +173,11 @@ Thanks to the high flexibility and scalability of ggplot2, we can make more pers
 ```{R}
 p1 <- p1 + theme(axis.ticks.x = element_blank(),axis.text.x = element_blank(),axis.title.x = element_blank())
 p2 <- p2 + theme(axis.ticks.x = element_blank(),axis.text.x = element_blank(),axis.title.x = element_blank(),legend.position = 'none')
-print(p1 + p2 + p3 + plot_layout(ncol = 1,heights = c(0.5,0.1,0.15)))
+p3 <- p3 + theme(axis.ticks.x = element_blank(),axis.text.x = element_blank(),axis.title.x = element_blank())
+print(p1 + p2 + p3 + p4 + plot_layout(ncol = 1,heights = c(0.5,0.1,0.1,0.15)))
 ```
 
-![style_1 plot](https://user-images.githubusercontent.com/32930896/252123890-43537c55-7e6c-4120-96b8-3b4dd1396a6f.png "style_1 plot")
+![style_1 plot](https://github.com/yimingsun12138/TrackPlotR/assets/32930896/99718865-47a0-4c70-a978-5fb01244f041 "style_1 plot")
 
 ### Display mode
 
@@ -194,7 +223,6 @@ In the collapse mode, all transcripts/genes and features will be plotted in the 
 
 ## Planning
 
-- Link track visualization
 - Highlight certain regions on the track plot
 - Pile-Up plot using sequencing fragments
 - Hi-C support
