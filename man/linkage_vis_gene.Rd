@@ -14,6 +14,7 @@ linkage_vis_gene(
   style = c("style_1"),
   color_by = NULL,
   col_pal = c("#E6E7E8", "#3A97FF", "#8816A7", "#000000"),
+  allow_truncated = FALSE,
   curve_width = 0.5,
   max_arrow_length = 0.08
 )
@@ -42,6 +43,8 @@ Ensembl GTF file is recommended. If you wish to use a GTF file from another sour
 \item{color_by}{Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.}
 
 \item{col_pal}{A custom palette used to override coloring for each linkage.}
+
+\item{allow_truncated}{Whether to display linkages that are truncated due to exceeding the region.}
 
 \item{curve_width}{Line width used to draw the linkage.}
 

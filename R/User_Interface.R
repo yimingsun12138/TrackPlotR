@@ -468,7 +468,7 @@ transcript_vis_region <- function(gene_anno,
   
   #subset gene_anno
   raw_gene_anno <- gene_anno
-  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region,ignore.strand = TRUE)
+  gene_anno <- IRanges::subsetByOverlaps(x = gene_anno,ranges = region,type = 'any',invert = FALSE,ignore.strand = TRUE)
   
   #set gene_anno cluster
   if(base::length(gene_anno) != 0){
@@ -510,7 +510,7 @@ transcript_vis_region <- function(gene_anno,
     #group gene_anno
     if(display_mode == 'squish'){
       gene_anno <- group_transcripts(gene_anno = gene_anno,column_name = 'unique_id')
-      gene_anno$cluster <- base::max(gene_anno$cluster) - gene_anno$cluster + 1
+      gene_anno$cluster <- base::max(as.numeric(gene_anno$cluster)) - as.numeric(gene_anno$cluster) + 1
     }else if(display_mode == 'full'){
       gene_anno$cluster <- gene_anno$unique_id
     }else if(display_mode == 'collapse'){
@@ -647,6 +647,7 @@ gene_track_vis <- function(gene_anno,
 #' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
 #' @param color_by Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.
 #' @param col_pal A custom palette used to override coloring for each linkage.
+#' @param allow_truncated Whether to display linkages that are truncated due to exceeding the region.
 #' @param curve_width Line width used to draw the linkage.
 #' @param max_arrow_length Max line length used to draw the arrow.
 #' 
@@ -660,6 +661,7 @@ linkage_vis_region <- function(linkage,
                                style = c('style_1'),
                                color_by = NULL,
                                col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
+                               allow_truncated = FALSE,
                                curve_width = 0.5,
                                max_arrow_length = 0.08){
   
@@ -693,6 +695,7 @@ linkage_vis_region <- function(linkage,
                                     region = region,
                                     color_by = color_by,
                                     col_pal = col_pal,
+                                    allow_truncated = allow_truncated,
                                     curve_width = curve_width,
                                     max_arrow_length = max_arrow_length)
   
@@ -723,6 +726,7 @@ linkage_vis_region <- function(linkage,
 #' @param style Plot style provided by package, check the [document](https://github.com/yimingsun12138/TrackPlotR) for details.
 #' @param color_by Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.
 #' @param col_pal A custom palette used to override coloring for each linkage.
+#' @param allow_truncated Whether to display linkages that are truncated due to exceeding the region.
 #' @param curve_width Line width used to draw the linkage.
 #' @param max_arrow_length Max line length used to draw the arrow.
 #' 
@@ -738,6 +742,7 @@ linkage_vis_gene <- function(linkage,
                              style = c('style_1'),
                              color_by = NULL,
                              col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
+                             allow_truncated = FALSE,
                              curve_width = 0.5,
                              max_arrow_length = 0.08){
   
@@ -788,6 +793,7 @@ linkage_vis_gene <- function(linkage,
                                      style = style,
                                      color_by = color_by,
                                      col_pal = col_pal,
+                                     allow_truncated = allow_truncated,
                                      curve_width = curve_width,
                                      max_arrow_length = max_arrow_length)
   

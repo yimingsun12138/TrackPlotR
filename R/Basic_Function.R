@@ -26,7 +26,7 @@ truncate_GRanges <- function(single_Range,
   
   #subset by overlap
   region <- methods::as(object = base::paste0(chr,':',start_site,'-',end_site),Class = 'GRanges')
-  subset_Range <- IRanges::subsetByOverlaps(x = single_Range,ranges = region,ignore.strand = TRUE)
+  subset_Range <- IRanges::subsetByOverlaps(x = single_Range,ranges = region,type = 'any',invert = FALSE,ignore.strand = TRUE)
   
   #return
   if(base::length(subset_Range) == 0){
@@ -562,6 +562,9 @@ group_transcripts <- function(gene_anno,
   if(!base::all(!base::is.na(S4Vectors::mcols(gene_anno)[,column_name]))){
     base::stop(base::paste0('NA is not allowed in gene_anno column: ',column_name,'!'))
   }
+  if(!base::all(!base::is.null(S4Vectors::mcols(gene_anno)[,column_name]))){
+    base::stop(base::paste0('NULL is not allowed in gene_anno column: ',column_name,'!'))
+  }
   
   #get transcript region
   transcript_list <- base::unique(base::as.character(S4Vectors::mcols(gene_anno)[,column_name]))
@@ -626,6 +629,7 @@ group_transcripts <- function(gene_anno,
 #' @param region Genome region used to generate the linkage track plot, must be a GRanges object.
 #' @param color_by Which column in the linkage stores the intensity of each linkage that is used to control the color? Set to NULL and each linkage will be the same color.
 #' @param col_pal A custom palette used to override coloring for each linkage.
+#' @param allow_truncated Whether to display linkages that are truncated due to exceeding the region.
 #' @param curve_width Line width used to draw the linkage.
 #' @param max_arrow_length Max line length used to draw the arrow.
 #' 
@@ -634,6 +638,7 @@ linkage_vis_basic <- function(linkage,
                               region,
                               color_by = NULL,
                               col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
+                              allow_truncated = FALSE,
                               curve_width = 0.5,
                               max_arrow_length = 0.08){
   
@@ -665,7 +670,11 @@ linkage_vis_basic <- function(linkage,
   }
   
   #subset linkage by region
-  linkage <- IRanges::subsetByOverlaps(x = linkage,ranges = region,ignore.strand = TRUE)
+  if(allow_truncated){
+    linkage <- IRanges::subsetByOverlaps(x = linkage,ranges = region,type = 'any',invert = FALSE,ignore.strand = TRUE)
+  }else{
+    linkage <- IRanges::subsetByOverlaps(x = linkage,ranges = region,type = 'within',invert = FALSE,ignore.strand = TRUE)
+  }
   if(base::length(linkage) == 0){
     linkage <- methods::as(object = base::paste0(chr,':','0-0'),Class = 'GRanges')
     linkage$value <- 1
