@@ -175,8 +175,8 @@ coverage_vis_basic <- function(coverage_table,
   }
   
   #basic plot
-  gg_object <- ggplot2::ggplot(data = coverage_table,mapping = ggplot2::aes(x = position,y = score,color = Sample,fill = Sample)) + 
-    ggplot2::geom_area(stat = 'identity') + 
+  gg_object <- ggplot2::ggplot(data = coverage_table) + 
+    ggplot2::geom_area(mapping = ggplot2::aes(x = position,y = score,color = Sample,fill = Sample),stat = 'identity',position = 'identity') + 
     ggplot2::facet_wrap(facets = ~ Sample,strip.position = 'right',ncol = 1) + 
     ggplot2::coord_cartesian(xlim = c(start_site,end_site),ylim = c(0,y_lim),expand = FALSE) + 
     ggplot2::ylab(base::paste0('Grouped Coverage\nRange : 0 - ',base::format(x = y_lim,scientific = TRUE,digits = 2))) + 
@@ -296,7 +296,7 @@ feature_vis_basic <- function(Ranges,
   }
   
   #basic plot
-  gg_object <- ggplot2::ggplot() + 
+  gg_object <- ggplot2::ggplot(data = Ranges_table) + 
     ggplot2::geom_segment(data = Ranges_table,mapping = ggplot2::aes(x = start,xend = end,y = track,yend = track,color = Feature),linewidth = segment_size)
   
   if((collapse_range) & (base::length(Ranges) > 1)){
@@ -498,7 +498,7 @@ transcript_vis_basic <- function(anno,
   }))
   
   #plot arrow
-  gg_object <- ggplot2::ggplot() + 
+  gg_object <- ggplot2::ggplot(data = arrow_table) + 
     ggplot2::geom_segment(data = arrow_table,mapping = ggplot2::aes(x = start,xend = end,y = cluster,yend = cluster),linewidth = transcript_width,color = arrow_color,arrow = grid::arrow(length = grid::unit(x = arrow_length,units = 'inches'))) + 
     ggplot2::geom_segment(data = arrow_table,mapping = ggplot2::aes(x = start,xend = end,y = cluster,yend = cluster),linewidth = transcript_width,color = transcript_color)
   
@@ -717,7 +717,7 @@ linkage_vis_basic <- function(linkage,
   }
   
   #basic plot
-  gg_object <- ggplot2::ggplot(data = breaked_segments,mapping = ggplot2::aes(x = x,y = y,group = group,color = value))
+  gg_object <- ggplot2::ggplot(data = breaked_segments)
   for (i in base::unique(breaked_segments$group)) {
     temp_breaked_segments <- breaked_segments[base::which(breaked_segments$group == i),,drop = FALSE]
     gg_object <- gg_object + 
