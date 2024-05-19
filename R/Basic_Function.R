@@ -21,7 +21,7 @@ truncate_GRanges <- function(single_Range,
     base::stop('single_Range must be a single GRanges object!')
   }
   if(base::length(single_Range) == 0){
-    base::stop('single_Range is empyt!')
+    base::stop('single_Range is empty!')
   }
   
   #subset by overlap
@@ -485,7 +485,7 @@ transcript_vis_basic <- function(anno,
       arrow_cluster <- arrow_table[idx,,drop = FALSE]
       
       keep_idx <- c(1)
-      for(i in 2:(base::nrow(arrow_cluster))){
+      for (i in 2:(base::nrow(arrow_cluster))) {
         diff_list <- base::abs(arrow_cluster[keep_idx,"end"] - arrow_cluster[i,"end"])
         if(base::sum(diff_list < break_length) == 0){
           keep_idx <- c(keep_idx,i)
@@ -794,4 +794,46 @@ linkage_table_to_GRanges <- function(linkage){
   
   #return
   return(linkage_GRanges)
+}
+
+#' Highlight specified genome region on the generated track plots
+#' 
+#' @description
+#' Highlight specified genome region on the generated track plots (for example, coverage track, feature track and transcript track).
+#' 
+#' @param gg_object Track plot as a ggplot object.
+#' @param start Start position for the genome region to be highlighted.
+#' @param end End position for the genome region to be highlighted.
+#' @param color Highlight color for the specified genome region.
+#' 
+#' @return A ggplot object.
+#' 
+#' @export
+highlight_region <- function(gg_object,
+                             start,
+                             end,
+                             color = '#FFEDAC'){
+  
+  #check parameter
+  if(!base::all(base::class(gg_object) %in% c('gg','ggplot'))){
+    base::stop('gg_object must be a ggplot object!')
+  }
+  
+  if(!((base::length(start) == 1) & (base::length(end) == 1))){
+    base::stop('only 1 region required!')
+  }
+  if(base::length(color) != 1){
+    base::stop('only 1 color required!')
+  }
+  
+  start <- base::as.numeric(start)
+  end <- base::as.numeric(end)
+  color <- base::as.character(color)
+  
+  #add highlight region layer
+  highlight_layer <- ggplot2::geom_rect(xmin = start,xmax = end,ymin = -Inf,ymax = Inf,color = NA,fill = color,stat = 'identity',position = 'identity',show.legend = FALSE)
+  gg_object$layers <- base::append(x = gg_object$layers,values = highlight_layer,after = 0)
+  
+  #return
+  return(gg_object)
 }
