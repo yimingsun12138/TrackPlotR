@@ -19,7 +19,7 @@ coverage_vis_region <- function(coverage_table,
                                 region,
                                 up_extend = 0,
                                 down_extend = 0,
-                                style = c('style_1'),
+                                style = c('style_1','style_2'),
                                 y_lim = NULL,
                                 sample_order = NULL,
                                 col_pal = NULL){
@@ -41,6 +41,15 @@ coverage_vis_region <- function(coverage_table,
     }
   }
   
+  #set y limit
+  if(base::is.null(y_lim)){
+    y_lim <- base::max(coverage_table$score)
+  }else{
+    if(base::class(y_lim) != 'numeric'){
+      base::stop('y_lim must be numerical!')
+    }
+  }
+  
   #extend region
   GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
   if(GenomicRanges::start(region) < 0){
@@ -53,7 +62,7 @@ coverage_vis_region <- function(coverage_table,
   
   #check style
   style <- style[1]
-  if(!(style %in% c('style_1'))){
+  if(!(style %in% c('style_1','style_2'))){
     base::stop('invalid style!')
   }
   
@@ -67,6 +76,21 @@ coverage_vis_region <- function(coverage_table,
   #style
   if(style == 'style_1'){
     coverage_plot <- coverage_plot
+  }else if(style == 'style_2'){
+    coverage_plot <- coverage_plot + 
+      ggplot2::scale_y_continuous(breaks = c(0,y_lim),labels = c(0,y_lim)) + 
+      ggplot2::theme(panel.spacing = grid::unit(x = 1,units = 'lines'),
+                     strip.background = ggplot2::element_blank(),
+                     panel.border = ggplot2::element_blank(),
+                     axis.line.y = ggplot2::element_line(),
+                     axis.ticks.y = ggplot2::element_line(),
+                     axis.text.y = ggplot2::element_text(),
+                     axis.title.y = ggplot2::element_blank(),
+                     axis.ticks.x = ggplot2::element_blank(),
+                     axis.text.x = ggplot2::element_blank(),
+                     legend.position = 'none')
+  }else{
+    base::stop('I can not believe this happened, LOL')
   }
   
   #return
@@ -102,7 +126,7 @@ coverage_vis_gene <- function(coverage_table,
                               gene,
                               up_extend = 3000,
                               down_extend = 3000,
-                              style = c('style_1'),
+                              style = c('style_1','style_2'),
                               y_lim = NULL,
                               sample_order = NULL,
                               col_pal = NULL){
@@ -183,7 +207,7 @@ feature_vis_region <- function(features,
                                up_extend = 0,
                                down_extend = 0,
                                collapse_features = FALSE,
-                               style = c('style_1'),
+                               style = c('style_1','style_2'),
                                col_pal = NULL,
                                overlap_col = 'darkgrey',
                                segment_size = 2){
@@ -222,7 +246,7 @@ feature_vis_region <- function(features,
   
   #check style
   style <- style[1]
-  if(!(style %in% c('style_1'))){
+  if(!(style %in% c('style_1','style_2'))){
     base::stop('invalid style!')
   }
   
@@ -237,6 +261,18 @@ feature_vis_region <- function(features,
   #style
   if(style == 'style_1'){
     feature_plot <- feature_plot
+  }else if(style == 'style_2'){
+    feature_plot <- feature_plot + 
+      ggplot2::scale_y_discrete(position = 'right') + 
+      ggplot2::theme(panel.border = ggplot2::element_blank(),
+                     axis.line.x = ggplot2::element_line(),
+                     axis.ticks.x = ggplot2::element_blank(),
+                     axis.text.x = ggplot2::element_blank(),
+                     axis.text.y = ggplot2::element_text(),
+                     axis.title.y = ggplot2::element_blank(),
+                     legend.position = 'none')
+  }else{
+    base::stop('I can not believe this happened, LOL')
   }
   
   #return
@@ -274,7 +310,7 @@ feature_vis_gene <- function(features,
                              up_extend = 3000,
                              down_extend = 3000,
                              collapse_features = FALSE,
-                             style = c('style_1'),
+                             style = c('style_1','style_2'),
                              col_pal = NULL,
                              overlap_col = 'darkgrey',
                              segment_size = 2){
@@ -362,7 +398,7 @@ transcript_vis_region <- function(gene_anno,
                                   region,
                                   up_extend = 0,
                                   down_extend = 0,
-                                  style = c('style_1'),
+                                  style = c('style_1','style_2'),
                                   arrow_break = 0.04,
                                   display_by = c('gene','transcript'),
                                   display_mode = c('squish','full','collapse'),
@@ -385,7 +421,7 @@ transcript_vis_region <- function(gene_anno,
   gene_anno <- gene_anno[idx]
   
   style <- style[1]
-  if(!(style %in% c('style_1'))){
+  if(!(style %in% c('style_1','style_2'))){
     base::stop('invalid style!')
   }
   
@@ -533,6 +569,15 @@ transcript_vis_region <- function(gene_anno,
   #style
   if(style == 'style_1'){
     transcript_plot <- transcript_plot
+  }else if(style == 'style_2'){
+    transcript_plot <- transcript_plot + 
+      ggplot2::theme(panel.border = ggplot2::element_blank(),
+                     axis.line.x = ggplot2::element_line(),
+                     axis.ticks.x = ggplot2::element_blank(),
+                     axis.text.x = ggplot2::element_blank(),
+                     axis.title.y = ggplot2::element_blank())
+  }else{
+    base::stop('I can not believe this happened, LOL')
   }
   
   #return
@@ -569,7 +614,7 @@ gene_track_vis <- function(gene_anno,
                            up_extend = 3000,
                            down_extend = 3000,
                            show_only = TRUE,
-                           style = c('style_1'),
+                           style = c('style_1','style_2'),
                            arrow_break = 0.04,
                            display_mode = c('squish','full','collapse'),
                            ...){
@@ -658,7 +703,7 @@ linkage_vis_region <- function(linkage,
                                region,
                                up_extend = 0,
                                down_extend = 0,
-                               style = c('style_1'),
+                               style = c('style_1','style_2'),
                                color_by = NULL,
                                col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
                                allow_truncated = FALSE,
@@ -686,7 +731,7 @@ linkage_vis_region <- function(linkage,
   
   #check style
   style <- style[1]
-  if(!(style %in% c('style_1'))){
+  if(!(style %in% c('style_1','style_2'))){
     base::stop('invalid style!')
   }
   
@@ -702,6 +747,15 @@ linkage_vis_region <- function(linkage,
   #style
   if(style == 'style_1'){
     linkage_plot <- linkage_plot
+  }else if(style == 'style_2'){
+    linkage_plot <- linkage_plot + 
+      ggplot2::theme(panel.border = ggplot2::element_blank(),
+                     axis.line.x = ggplot2::element_line(),
+                     axis.ticks.x = ggplot2::element_blank(),
+                     axis.text.x = ggplot2::element_blank(),
+                     axis.title.y = ggplot2::element_blank())
+  }else{
+    base::stop('I can not believe this happened, LOL')
   }
   
   #return
@@ -739,7 +793,7 @@ linkage_vis_gene <- function(linkage,
                              gene,
                              up_extend = 3000,
                              down_extend = 3000,
-                             style = c('style_1'),
+                             style = c('style_1','style_2'),
                              color_by = NULL,
                              col_pal = c('#E6E7E8','#3A97FF','#8816A7','#000000'),
                              allow_truncated = FALSE,

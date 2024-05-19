@@ -9,7 +9,7 @@ coverage_vis_region(
   region,
   up_extend = 0,
   down_extend = 0,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   y_lim = NULL,
   sample_order = NULL,
   col_pal = NULL

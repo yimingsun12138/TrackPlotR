@@ -11,7 +11,7 @@ linkage_vis_gene(
   gene,
   up_extend = 3000,
   down_extend = 3000,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   color_by = NULL,
   col_pal = c("#E6E7E8", "#3A97FF", "#8816A7", "#000000"),
   allow_truncated = FALSE,

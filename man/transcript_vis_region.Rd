@@ -9,7 +9,7 @@ transcript_vis_region(
   region,
   up_extend = 0,
   down_extend = 0,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   arrow_break = 0.04,
   display_by = c("gene", "transcript"),
   display_mode = c("squish", "full", "collapse"),

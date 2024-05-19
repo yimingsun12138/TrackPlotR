@@ -10,7 +10,7 @@ feature_vis_region(
   up_extend = 0,
   down_extend = 0,
   collapse_features = FALSE,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   col_pal = NULL,
   overlap_col = "darkgrey",
   segment_size = 2

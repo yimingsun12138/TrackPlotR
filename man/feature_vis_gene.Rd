@@ -12,7 +12,7 @@ feature_vis_gene(
   up_extend = 3000,
   down_extend = 3000,
   collapse_features = FALSE,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   col_pal = NULL,
   overlap_col = "darkgrey",
   segment_size = 2

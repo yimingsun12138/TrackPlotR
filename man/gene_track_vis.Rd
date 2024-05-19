@@ -11,7 +11,7 @@ gene_track_vis(
   up_extend = 3000,
   down_extend = 3000,
   show_only = TRUE,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   arrow_break = 0.04,
   display_mode = c("squish", "full", "collapse"),
   ...

@@ -11,7 +11,7 @@ coverage_vis_gene(
   gene,
   up_extend = 3000,
   down_extend = 3000,
-  style = c("style_1"),
+  style = c("style_1", "style_2"),
   y_lim = NULL,
   sample_order = NULL,
   col_pal = NULL
