@@ -159,7 +159,7 @@ print(p4 + theme(aspect.ratio = 0.15))
 
 ### Plotting style
 
-Usually, we would like to observe different track plots together, so it is particularly important to set a uniform style for different track plots. Currently, TrackPlotR has only one build-in plotting style, and more styles will be added in the future.
+Usually, we would like to observe different track plots together, so it is particularly important to set a uniform style for different track plots. Currently, TrackPlotR has only two build-in plotting styles, and more styles will be added in the future.
 
 ```{R}
 p1 <- coverage_vis_region(coverage_table = coverage_info,region = region,y_lim = 0.03,sample_order = c('S1','S2','S3','S4'),col_pal = c("#D51F26","#272E6A","#208A42","#89288F"),style = 'style_1')
@@ -178,6 +178,47 @@ print(p1 + p2 + p3 + p4 + plot_layout(ncol = 1,heights = c(0.5,0.1,0.1,0.15)))
 ```
 
 ![style_1 plot](https://github.com/yimingsun12138/TrackPlotR/assets/32930896/99718865-47a0-4c70-a978-5fb01244f041 "style_1 plot")
+
+All borders are removed in 'style_2', making it suitable for visualization with greater width.
+
+```{R}
+#visualize with style_2
+p1 <- coverage_vis_region(coverage_table = coverage_info,region = region,y_lim = 0.03,sample_order = c('S1','S2','S3','S4'),col_pal = c("#D51F26","#272E6A","#208A42","#89288F"),style = 'style_2')
+p2 <- feature_vis_region(features = peak_info,region = region,col_pal = c("#D51F26","#272E6A","#208A42"),style = 'style_2')
+p3 <- linkage_vis_region(linkage = linkage,region = region,color_by = 'Correlation',style = 'style_2')
+p4 <- transcript_vis_region(gene_anno = human_anno,region = region,display_by = 'gene',show_name = 'gene_name',style = 'style_2')
+
+p1 <- p1 + theme(axis.title.x = element_blank())
+p2 <- p2 + theme(axis.line.x = element_blank(),axis.title.x = element_blank())
+p3 <- p3 + theme(axis.line.x = element_blank(),axis.title.x = element_blank())
+print(p1 + p2 + p3 + p4 + plot_layout(ncol = 1,heights = c(0.5,0.1,0.1,0.15)))
+```
+
+![style_2 plot](https://github.com/yimingsun12138/TrackPlotR/assets/32930896/09300070-e705-498a-8d96-619d10876b73 "style_2 plot")
+
+### Highlight region
+
+Sometimes, we want to emphasize our discoveries by highlighting specific genome regions, which can be conveniently achieved using the `highlight_region` function. By simply providing the `highlight_region` function with the track plot (as a ggplot object) and the genome region we are interested in, we can obtain a ggplot object with added background highlight.
+
+```{R}
+#highlight region
+p1 <- coverage_vis_region(coverage_table = coverage_info,region = region,y_lim = 0.03,sample_order = c('S1','S2','S3','S4'),col_pal = c("#D51F26","#272E6A","#208A42","#89288F"),style = 'style_1')
+p2 <- feature_vis_region(features = peak_info,region = region,col_pal = c("#D51F26","#272E6A","#208A42"),style = 'style_1')
+p3 <- linkage_vis_region(linkage = linkage,region = region,color_by = 'Correlation',style = 'style_1')
+p4 <- transcript_vis_region(gene_anno = human_anno,region = region,display_by = 'gene',show_name = 'gene_name',style = 'style_1')
+
+p1 <- highlight_region(gg_object = p1,start = 58622610,end = 58632610)
+p2 <- highlight_region(gg_object = p2,start = 58622610,end = 58632610)
+p3 <- highlight_region(gg_object = p3,start = 58622610,end = 58632610)
+p4 <- highlight_region(gg_object = p4,start = 58622610,end = 58632610)
+
+p1 <- p1 + theme(axis.ticks.x = element_blank(),axis.text.x = element_blank(),axis.title.x = element_blank())
+p2 <- p2 + theme(axis.ticks.x = element_blank(),axis.text.x = element_blank(),axis.title.x = element_blank(),legend.position = 'none')
+p3 <- p3 + theme(axis.ticks.x = element_blank(),axis.text.x = element_blank(),axis.title.x = element_blank())
+print(p1 + p2 + p3 + p4 + plot_layout(ncol = 1,heights = c(0.5,0.1,0.1,0.15)))
+```
+
+![highlight region plot](https://github.com/yimingsun12138/TrackPlotR/assets/32930896/be1326ca-40e0-4507-ba79-764cf0290cba "highlight region plot")
 
 ### Display mode
 
@@ -223,6 +264,6 @@ In the collapse mode, all transcripts/genes and features will be plotted in the 
 
 ## Planning
 
-- Highlight certain regions on the track plot
 - Pile-Up plot using sequencing fragments
 - Hi-C support
+- Chromosome plot
