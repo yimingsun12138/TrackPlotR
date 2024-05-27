@@ -41,15 +41,6 @@ coverage_vis_region <- function(coverage_table,
     }
   }
   
-  #set y limit
-  if(base::is.null(y_lim)){
-    y_lim <- base::max(coverage_table$score)
-  }else{
-    if(base::class(y_lim) != 'numeric'){
-      base::stop('y_lim must be numerical!')
-    }
-  }
-  
   #extend region
   GenomicRanges::start(region) <- GenomicRanges::start(region) - up_extend
   if(GenomicRanges::start(region) < 0){
@@ -77,6 +68,15 @@ coverage_vis_region <- function(coverage_table,
   if(style == 'style_1'){
     coverage_plot <- coverage_plot
   }else if(style == 'style_2'){
+    # set y limit
+    if(base::is.null(y_lim)){
+      y_lim <- base::max(coverage_plot$data$score)
+    }else{
+      if(base::class(y_lim) != 'numeric'){
+        base::stop('y_lim must be numerical!')
+      }
+    }
+    
     coverage_plot <- coverage_plot + 
       ggplot2::scale_y_continuous(breaks = c(0,y_lim),labels = c(0,y_lim)) + 
       ggplot2::theme(panel.spacing = grid::unit(x = 1,units = 'lines'),
